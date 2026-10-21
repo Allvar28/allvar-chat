@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlLvar</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#17212b;font-family:Arial,sans-serif}
+header{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px;text-align:center}
+header h1{margin:0;color:#075e54;font-size:27px}
+header p{margin:5px 0 0;color:#667085;font-size:13px}
+main{max-width:780px;margin:auto;padding:12px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:10px 0}
+h2{font-size:19px;margin:0 0 10px}
+input,button{font:inherit;border-radius:9px;padding:11px;border:1px solid #d0d5dd}
+input{width:100%;margin:5px 0 9px;background:#fff;color:#17212b}
+button{background:#087f70;color:#fff;border:0;cursor:pointer;margin:3px}
+button.gray{background:#eef2f4;color:#17212b}
+button.red{background:#b42318}
+.hidden{display:none!important}
+.tabs{display:flex;gap:5px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:80px}
+.row{display:flex;gap:7px;align-items:center}
+.row input{flex:1;min-width:0}
+.avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#e5e7eb;flex-shrink:0}
+.profile{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.small{font-size:12px;color:#667085}
+.status{font-size:13px;white-space:pre-wrap;color:#475467}
+.item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eee}
+.item:last-child{border-bottom:0}
+.item .grow p{margin:4px 0 0;font-size:12px;color:#667085;overflow-wrap:anywhere}
+#messages{height:43vh;min-height:250px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff}
+.message{max-width:88%;width:max-content;min-width:100px;background:#f1f3f5;border:1px solid #e5e7eb;color:#17212b;border-radius:12px;padding:9px;margin:8px 0;overflow-wrap:anywhere}
+.message.mine{margin-left:auto;background:#e8f7ed}
+.meta{font-size:11px;color:#667085;margin-bottom:5px}
+.message img.media{display:block;max-width:100%;max-height:280px;border-radius:8px}
+.message audio{display:block;width:100%;max-width:260px}
+.message-actions{position:relative;display:flex;justify-content:flex-end;margin-top:4px}
+.dots{background:transparent;color:#344054;font-size:22px;padding:0 8px;margin:0;line-height:1.1}
+.menu{position:absolute;right:0;top:30px;z-index:5;background:#fff;border:1px solid #d0d5dd;box-shadow:0 4px 15px #0002;border-radius:9px;padding:5px;min-width:170px}
+.menu button{display:block;width:100%;text-align:left;margin:2px 0;background:#fff;color:#17212b;padding:9px}
+.menu button:hover{background:#f2f4f7}
+.chathead{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.chathead .grow{flex:1}
+.callbuttons{display:flex;gap:3px}
+.callbuttons button{padding:9px;font-size:13px}
+.hint{font-size:12px;color:#667085;line-height:1.45}
+.chat-composer{margin-top:8px}
+.chat-composer-main{display:flex;align-items:center;gap:5px}
+.chat-composer-main input{flex:1;min-width:0;margin:0}
+.chat-composer-main button{flex-shrink:0;margin:0;padding:10px 12px}
+.chat-composer-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.chat-composer-tools button{margin:0}
+</style>
+</head>
+<body>
+<header><h1>AlLvar</h1><p>Chat with friends around the world</p></header>
+<main>
+<div id="status" class="card status">Connecting to Firebase…</div>
+<section id="auth" class="card">
+<h2>Create account</h2>
+<input id="suName" placeholder="Username (3–20 letters, numbers or _)">
+<input id="suEmail" type="email" placeholder="Email address">
+<input id="suPass" type="password" placeholder="Password (at least 6 characters)">
+<button id="signup">Sign up</button>
+<hr>
+<h2>Log in</h2>
+<input id="liEmail" type="email" placeholder="Email address">
+<input id="liPass" type="password" placeholder="Password">
+<button id="login">Log in</button>
+</section>
+<section id="app" class="hidden">
+<div class="card">
+ <div class="profile"><img id="myPic" class="avatar" alt="Profile picture"><div class="grow"><strong id="welcome"></strong><div class="small">Your profile</div></div><button class="gray" id="logout">Log out</button></div>
+ <label class="small" for="picFile">Choose profile picture</label><input id="picFile" type="file" accept="image/*">
+ <button id="savePic">Save profile picture</button>
+</div>
+<div class="card tabs"><button data-page="chats">Chats</button><button data-page="friends">Find Friends</button><button data-page="translate">Translate</button></div>
+<section id="chats" class="card"><h2>Your chats</h2><div id="rooms" class="status">Loading conversations…</div></section>
+<section id="friends" class="card hidden"><h2>Find Friends</h2><input id="findName" placeholder="Enter exact username"><button id="findBtn">Search</button><div id="found" class="status"></div></section>
+<section id="translate" class="card hidden"><h2>Translate</h2><button id="translateBtn">Open Google Translate</button></section>
+<section id="chat" class="card hidden">
+ <div class="chathead"><img id="friendPic" class="avatar" alt="Friend profile picture"><div class="grow"><strong id="friendTitle">Private chat</strong><div class="small">Private conversation</div></div><div class="callbuttons"><button id="voiceCall" title="Voice call">📞</button><button id="videoCall" title="Video call">🎥</button></div><button class="gray" id="back">Back</button></div>
+ <div id="callStatus" class="hint"></div>
+ <div id="messages"></div>
+ <div class="chat-composer">
+  <div class="chat-composer-main">
+   <input id="messageText" maxlength="2000" placeholder="Write a message...">
+   <button id="send" type="button">Send</button>
+  </div>
+  <div class="chat-composer-tools">
+   <button id="voiceRecord" type="button">🎤 Record</button>
+   <button class="gray" id="photoBtn" type="button">📷 Photo</button>
+   <input id="photoFile" type="file" accept="image/*" class="hidden">
+  </div>
+  <div class="small" style="margin-top:5px">Send a text, record a voice message, or share a photo.</div>
+ </div>
+ <p class="hint">Use the three-dot menu on your own message to edit or delete it. Calls need both users online and may require Firebase rules plus TURN/network configuration for reliable connection.</p>
+ <div id="callArea" class="hidden">
+  <video id="localVideo" autoplay muted playsinline style="width:48%;background:#111;border-radius:8px"></video>
+  <video id="remoteVideo" autoplay playsinline style="width:48%;background:#111;border-radius:8px"></video>
+  <button id="endCall" class="red">End call</button>
+ </div>
+</section>
+</section>
+</main>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD3v4R98m7mN_0rC8h_FOdcFRxgs9XCzOQ",
+  authDomain: "allvar-new.firebaseapp.com",
+  projectId: "allvar-new",
+  storageBucket: "allvar-new.firebasestorage.app",
+  messagingSenderId: "999407977980",
+  appId: "1:999407977980:web:acaa25e2bd639bd941de79",
+  measurementId: "G-F76PLJTL2X"
+};
+const $=id=>document.getElementById(id);
+const fallback="data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#e5e7eb"/><circle cx="50" cy="35" r="18" fill="#98a2b3"/><path d="M15 95c2-24 16-36 35-36s33 12 35 36" fill="#98a2b3"/></svg>');
+let auth,db,storage,me=null,myName="",myPhoto="",friendUid="",friendName="",friendPhoto="",chatId="",roomsUnsub=null,msgUnsub=null;
+let pc=null,localStream=null,activeCallId=null,callUnsub=null;
+const pcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+function say(t){$("status").textContent=t}
+function setPic(el,url){el.src=url||fallback;el.onerror=()=>el.src=fallback}
+function validName(n){return /^[A-Za-z0-9_]{3,20}$/.test(n)}
+function roomId(a,b){return [a,b].sort().join("_")}
+function stamp(){return firebase.firestore.FieldValue.serverTimestamp()}
+function stopRooms(){if(roomsUnsub){roomsUnsub();roomsUnsub=null}}
+function stopMsgs(){if(msgUnsub){msgUnsub();msgUnsub=null}}
+function page(p){["chats","friends","translate","chat"].forEach(x=>$(x).classList.toggle("hidden",x!==p))}
+function errorText(e){return e&&e.message?e.message:String(e)}
+async function signupNow(){
+ let username=$("suName").value.trim(),email=$("suEmail").value.trim(),password=$("suPass").value;
+ if(!validName(username)){alert("Username must be 3–20 letters, numbers, or underscores.");return}
+ if(!email||password.length<6){alert("Enter your email and a password with at least 6 characters.");return}
+ try{
+  const key=username.toLowerCase(),existing=await db.collection("usernames").doc(key).get();
+  if(existing.exists){alert("That username is already taken.");return}
+  const c=await auth.createUserWithEmailAndPassword(email,password);
+  const batch=db.batch();
+  batch.set(db.collection("users").doc(c.user.uid),{username,usernameLower:key,photoURL:"",createdAt:stamp()});
+  batch.set(db.collection("usernames").doc(key),{uid:c.user.uid,username,usernameLower:key});
+  await batch.commit();
+ }catch(e){alert("Sign-up error: "+errorText(e))}
+}
+async function loginNow(){try{await auth.signInWithEmailAndPassword($("liEmail").value.trim(),$("liPass").value)}catch(e){alert("Login error: "+errorText(e))}}
+async function loadMe(){
+ const s=await db.collection("users").doc(me.uid).get(),d=s.exists?s.data():{};
+ myName=d.username||(me.email||"user").split("@")[0];myPhoto=d.photoURL||"";
+ $("welcome").textContent="Welcome, "+myName;setPic($("myPic"),myPhoto);
+}
+async function uploadProfile(){
+ const f=$("picFile").files[0];if(!f){alert("Choose a profile picture first.");return}
+ if(!f.type.startsWith("image/")||f.size>5*1024*1024){alert("Choose an image smaller than 5 MB.");return}
+ try{const path="profilePictures/"+me.uid+"/profile_"+Date.now();const ref=storage.ref(path);await ref.put(f,{contentType:f.type});const url=await ref.getDownloadURL();await db.collection("users").doc(me.uid).set({photoURL:url,photoPath:path},{merge:true});myPhoto=url;setPic($("myPic"),url);alert("Profile picture saved.")}
+ catch(e){alert("Profile picture error: "+errorText(e))}
+}
+async function findFriend(){
+ const n=$("findName").value.trim();if(!validName(n)){$("found").textContent="Enter a valid username.";return}
+ $("found").textContent="Searching…";
+ try{const map=await db.collection("usernames").doc(n.toLowerCase()).get();if(!map.exists){$("found").textContent="No account found.";return}
+ const uid=map.data().uid;if(uid===me.uid){$("found").textContent="That is your own username.";return}
+ const p=await db.collection("users").doc(uid).get();if(!p.exists){$("found").textContent="Profile not found.";return}
+ const d=p.data(),name=d.username||n,photo=d.photoURL||"";$("found").innerHTML="";
+ const row=document.createElement("div");row.className="item";const img=document.createElement("img");img.className="avatar";setPic(img,photo);
+ const info=document.createElement("div");info.className="grow";const strong=document.createElement("strong");strong.textContent=name;info.append(strong);
+ const b=document.createElement("button");b.textContent="Message";b.onclick=()=>openChat(uid,name,photo);row.append(img,info,b);$("found").append(row);
+ }catch(e){$("found").textContent="Search error: "+errorText(e)}
+}
+async function openChat(uid, name, photo = "") {
+  if (!me || uid === me.uid) return;
+  stopMsgs();
+  friendUid = uid;
+  friendName = name || "Friend";
+  friendPhoto = photo || "";
+  chatId = roomId(me.uid, uid);
+  page("chat");
+  $("friendTitle").textContent = friendName;
+  setPic($("friendPic"), friendPhoto);
+  $("messages").innerHTML = "";
+  try {
+    const profile = await db.collection("users").doc(uid).get();
+    if (profile.exists) {
+      const data = profile.data();
+      friendName = data.username || friendName;
+      friendPhoto = data.photoURL || friendPhoto;
+      $("friendTitle").textContent = friendName;
+      setPic($("friendPic"), friendPhoto);
+    }
+    const ref = db.collection("privateChats").doc(chatId);
+    const existingChat = await ref.get();
+    if (existingChat.exists) {
+      listenMessages();
+    } else {
+      $("messages").innerHTML = '<p style="text-align:center;color:#888;">Say hello! Send your first message to start this chat.</p>';
+    }
+  } catch (e) {
+    alert("Chat error (" + (e.code || "unknown") + "): " + (e.message || e));
+    console.error("Open chat error:", e);
+  }
+}
+function listenRooms(){
+ stopRooms();$("rooms").textContent="Loading conversations…";
+ roomsUnsub=db.collection("privateChats").where("members","array-contains",me.uid).onSnapshot(async snap=>{
+  try{
+   $("rooms").innerHTML="";
+   if(snap.empty){$("rooms").textContent="No chats yet. Find Friends to start a private chat.";return}
+   const uniquePeople=new Set();
+   for(const doc of snap.docs){
+    const d=doc.data(),other=(d.members||[]).find(x=>x!==me.uid);
+    if(!other||uniquePeople.has(other))continue;
+    uniquePeople.add(other);
+    let n="Friend",photo="";
+    try{const p=await db.collection("users").doc(other).get();if(p.exists){n=p.data().username||n;photo=p.data().photoURL||""}}catch(e){}
+    const row=document.createElement("div");row.className="item";
+    const img=document.createElement("img");img.className="avatar";setPic(img,photo);
+    const info=document.createElement("div");info.className="grow";
+    const bname=document.createElement("strong");bname.textContent=n;
+    const preview=document.createElement("p");preview.textContent=d.lastMessage||"Private conversation";
+    info.append(bname,preview);
+    const open=document.createElement("button");open.textContent="Open";open.onclick=()=>openChat(other,n,photo);
+    row.append(img,info,open);$("rooms").append(row);
+   }
+   if(!$("rooms").hasChildNodes())$("rooms").textContent="No chats yet. Find Friends to start a private chat.";
+  }catch(e){$("rooms").textContent="Could not display chats: "+errorText(e);console.error("Display chats error:",e)}
+ },e=>{$("rooms").textContent="Chats error: "+(e.code||"")+" — "+(e.message||e);console.error("Chats query error:",e)});
+}
+function listenMessages(){
+ stopMsgs();msgUnsub=db.collection("privateChats").doc(chatId).collection("messages").orderBy("createdAt","asc").limit(100).onSnapshot(s=>{
+ $("messages").innerHTML="";s.forEach(doc=>{const d=doc.data();if((d.hiddenFor||[]).includes(me.uid))return;renderMsg(doc.id,d)});$("messages").scrollTop=$("messages").scrollHeight
+ },e=>{$("messages").textContent="Cannot load messages: "+errorText(e);console.error(e)});
+}
+function renderMsg(id,d){
+ const mine=d.uid===me.uid,box=document.createElement("div");box.className="message"+(mine?" mine":"");
+ const meta=document.createElement("div");meta.className="meta";meta.textContent=(mine?"You":(d.username||friendName))+(d.edited?" · edited":"");box.append(meta);
+ if(d.deletedForEveryone){const gone=document.createElement("i");gone.textContent="This message was deleted.";box.append(gone)}
+ else if(d.mediaType==="photo"&&d.mediaUrl){const im=document.createElement("img");im.className="media";im.src=d.mediaUrl;im.alt="Photo";box.append(im)}
+ else if(d.mediaType==="audio"&&d.mediaUrl){const audio=document.createElement("audio");audio.controls=true;audio.src=d.mediaUrl;box.append(audio)}
+ else{const body=document.createElement("div");body.textContent=d.text||"";box.append(body)}
+ const actionWrap=document.createElement("div");actionWrap.className="message-actions";const dots=document.createElement("button");dots.className="dots";dots.textContent="⋮";dots.setAttribute("aria-label","Message options");actionWrap.append(dots);
+ const menu=document.createElement("div");menu.className="menu hidden";
+ function item(label,fn,red=false){const b=document.createElement("button");b.textContent=label;if(red)b.style.color="#b42318";b.onclick=()=>{menu.classList.add("hidden");fn()};menu.append(b)}
+ if(mine&&!d.deletedForEveryone){item("Edit message",()=>editMsg(id,d));item("Delete for everyone",()=>deleteEveryone(id,d),true)}
+ if(!d.deletedForEveryone)item("Delete for me",()=>deleteMe(id,d),true);
+ dots.onclick=e=>{e.stopPropagation();document.querySelectorAll(".menu").forEach(m=>{if(m!==menu)m.classList.add("hidden")});menu.classList.toggle("hidden")};
+ actionWrap.append(menu);box.append(actionWrap);$("messages").append(box);
+}
+function recent(d){return d.createdAt&&d.createdAt.toDate&&Date.now()-d.createdAt.toDate().getTime()<=15*60*1000}
+async function editMsg(id,d){if(!recent(d)){alert("Editing is available within 15 minutes.");return}const t=prompt("Edit message:",d.text||"");if(t===null)return;const text=t.trim();if(!text||text.length>2000){alert("Message must be 1–2000 characters.");return}try{await db.collection("privateChats").doc(chatId).collection("messages").doc(id).update({text,edited:true,editedAt:stamp()})}catch(e){alert("Edit failed: "+errorText(e))}}
+async function deleteEveryone(id,d){if(!recent(d)){alert("Delete for everyone is available within 15 minutes.");return}if(!confirm("Delete this message for everyone?"))return;try{await db.collection("privateChats").doc(chatId).collection("messages").doc(id).update({text:"",deletedForEveryone:true,deletedAt:stamp()})}catch(e){alert("Delete failed: "+errorText(e))}}
+async function deleteMe(id,d){if(!confirm("Hide this message only for you?"))return;try{const hidden=[...new Set([...(d.hiddenFor||[]),me.uid])];await db.collection("privateChats").doc(chatId).collection("messages").doc(id).update({hiddenFor:hidden})}catch(e){alert("Delete for me failed: "+errorText(e))}}
+async function sendText() {
+  const text = $("messageText").value.trim();
+  if (!text || !me || !friendUid || !chatId) return;
+  try {
+    const room = db.collection("privateChats").doc(chatId);
+    const roomSnap = await room.get();
+    if (!roomSnap.exists) {
+      await room.set({
+        members: [me.uid, friendUid].sort(),
+        createdAt: stamp(),
+        lastMessage: text,
+        lastMessageAt: stamp(),
+        lastMessageBy: me.uid
+      });
+    } else {
+      await room.update({lastMessage:text,lastMessageAt:stamp(),lastMessageBy:me.uid});
+    }
+    await room.collection("messages").add({
+      text:text,uid:me.uid,username:myName,deliveredTo:[],readBy:[],hiddenFor:[],createdAt:stamp()
+    });
+    $("messageText").value = "";
+    stopMsgs();
+    listenMessages();
+  } catch (e) {
+    console.error("Send message error:", e);
+    alert("Send failed: " + errorText(e));
+  }
+}
+async function sendPhoto(file){
+ if(!file)return;if(!file.type.startsWith("image/")||file.size>8*1024*1024){alert("Choose an image smaller than 8 MB.");return}
+ try{const path="chatPhotos/"+chatId+"/"+me.uid+"_"+Date.now();const ref=storage.ref(path);await ref.put(file,{contentType:file.type});const url=await ref.getDownloadURL();const room=db.collection("privateChats").doc(chatId);const snap=await room.get();if(!snap.exists){await room.set({members:[me.uid,friendUid].sort(),createdAt:stamp(),lastMessage:"📷 Photo",lastMessageAt:stamp(),lastMessageBy:me.uid})}else{await room.update({lastMessage:"📷 Photo",lastMessageAt:stamp(),lastMessageBy:me.uid})}await room.collection("messages").add({text:"",mediaType:"photo",mediaUrl:url,storagePath:path,uid:me.uid,username:myName,deliveredTo:[],readBy:[],hiddenFor:[],createdAt:stamp()});stopMsgs();listenMessages()}
+ catch(e){alert("Photo send failed: "+errorText(e))}
+}
+let recorder=null,recordedChunks=[],recording=false;
+async function toggleVoiceRecording(){
+ if(!me||!friendUid||!chatId){alert("Open a private chat first.");return}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){alert("Voice recording needs a supported browser and a secure HTTPS page.");return}
+ if(!recording){
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+   recordedChunks=[];
+   let mimeType="";
+   if(MediaRecorder.isTypeSupported("audio/webm"))mimeType="audio/webm";
+   recorder=new MediaRecorder(stream,mimeType?{mimeType}:undefined);
+   recorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
+   recorder.onstop=async()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    $("voiceRecord").textContent="🎤 Record";
+    recording=false;
+    if(!recordedChunks.length){alert("No audio was recorded.");return}
+    const blob=new Blob(recordedChunks,{type:recorder.mimeType||"audio/webm"});
+    if(blob.size>10*1024*1024){alert("Voice recording is too large. Please record a shorter message.");return}
+    try{
+     $("voiceRecord").disabled=true;
+     $("voiceRecord").textContent="Sending…";
+     const path="chatAudio/"+chatId+"/"+me.uid+"_"+Date.now()+".webm";
+     const fileRef=storage.ref(path);
+     await fileRef.put(blob,{contentType:blob.type||"audio/webm"});
+     const url=await fileRef.getDownloadURL();
+     const room=db.collection("privateChats").doc(chatId),snap=await room.get();
+     if(!snap.exists){await room.set({members:[me.uid,friendUid].sort(),createdAt:stamp(),lastMessage:"🎤 Voice message",lastMessageAt:stamp(),lastMessageBy:me.uid})}
+     else{await room.update({lastMessage:"🎤 Voice message",lastMessageAt:stamp(),lastMessageBy:me.uid})}
+     await room.collection("messages").add({text:"",mediaType:"audio",mediaUrl:url,storagePath:path,uid:me.uid,username:myName,deliveredTo:[],readBy:[],hiddenFor:[],createdAt:stamp()});
+     stopMsgs();listenMessages();
+    }catch(e){alert("Voice message send failed: "+errorText(e))}
+    finally{$("voiceRecord").disabled=false;$("voiceRecord").textContent="🎤 Record"}
+   };
+   recorder.start();
+   recording=true;
+   $("voiceRecord").textContent="⏹ Stop & Send";
+  }catch(e){alert("Microphone access failed: "+errorText(e))}
+ }else if(recorder&&recorder.state!=="inactive"){recorder.stop()}
+}
+function closeCallUI(){if(callUnsub){callUnsub();callUnsub=null}if(pc){pc.close();pc=null}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}$("localVideo").srcObject=null;$("remoteVideo").srcObject=null;$("callArea").classList.add("hidden");$("callStatus").textContent="";activeCallId=null}
+async function startCall(video){
+ try{
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Error("Calls require HTTPS and a browser that supports microphone/camera.");
+  closeCallUI();localStream=await navigator.mediaDevices.getUserMedia({audio:true,video});$("localVideo").srcObject=localStream;$("localVideo").style.display=video?"block":"none";$("remoteVideo").style.display=video?"block":"none";$("callArea").classList.remove("hidden");$("callStatus").textContent="Starting "+(video?"video":"voice")+" call…";
+  pc=new RTCPeerConnection(pcConfig);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.ontrack=e=>{if(e.streams[0])$("remoteVideo").srcObject=e.streams[0]};
+  const callRef=db.collection("privateChats").doc(chatId).collection("calls").doc();
+  activeCallId=callRef.id;
+  const offerCandidates=callRef.collection("offerCandidates");
+  pc.onicecandidate=e=>{if(e.candidate)offerCandidates.add(e.candidate.toJSON()).catch(console.error)};
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  await callRef.set({caller:me.uid,callee:friendUid,kind:video?"video":"voice",offer:{type:offer.type,sdp:offer.sdp},status:"ringing",createdAt:stamp()});
+  callUnsub=callRef.onSnapshot(async s=>{
+   const d=s.data();if(!d)return;
+   if(d.answer&&pc&&!pc.currentRemoteDescription){await pc.setRemoteDescription(new RTCSessionDescription(d.answer));$("callStatus").textContent="Call connected."}
+   if(d.status==="ended")closeCallUI();
+  });
+  callRef.collection("answerCandidates").onSnapshot(s=>s.docChanges().forEach(ch=>{if(ch.type==="added"&&pc)pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(console.error)}));
+  $("callStatus").textContent="Calling "+friendName+"…";
+ }catch(e){closeCallUI();alert("Could not start call: "+errorText(e))}
+}
+function watchCalls(){
+ const calls=db.collection("privateChats").doc(chatId).collection("calls");
+ calls.where("callee","==",me.uid).where("status","==","ringing").onSnapshot(s=>s.docChanges().forEach(ch=>{
+  if(ch.type!=="added")return;const d=ch.doc.data();if(!confirm((d.kind==="video"?"Video":"Voice")+" call incoming. Accept?"))return;
+  acceptCall(ch.doc.id,d).catch(e=>alert("Could not answer call: "+errorText(e)));
+ }),e=>console.warn("Incoming call listener:",e.message));
+}
+async function acceptCall(id,d){
+ closeCallUI();activeCallId=id;localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:d.kind==="video"});$("localVideo").srcObject=localStream;$("localVideo").style.display=d.kind==="video"?"block":"none";$("remoteVideo").style.display=d.kind==="video"?"block":"none";$("callArea").classList.remove("hidden");pc=new RTCPeerConnection(pcConfig);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.ontrack=e=>{if(e.streams[0])$("remoteVideo").srcObject=e.streams[0]};
+ const ref=db.collection("privateChats").doc(chatId).collection("calls").doc(id),offerCandidates=ref.collection("offerCandidates"),answerCandidates=ref.collection("answerCandidates");
+ pc.onicecandidate=e=>{if(e.candidate)answerCandidates.add(e.candidate.toJSON()).catch(console.error)};
+ await pc.setRemoteDescription(new RTCSessionDescription(d.offer));const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await ref.update({answer:{type:answer.type,sdp:answer.sdp},status:"answered"});
+ offerCandidates.onSnapshot(s=>s.docChanges().forEach(ch=>{if(ch.type==="added"&&pc)pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(console.error)}));
+ callUnsub=ref.onSnapshot(s=>{if(s.data()&&s.data().status==="ended")closeCallUI()});$("callStatus").textContent="Call connected.";
+}
+async function endCall(){try{if(activeCallId)await db.collection("privateChats").doc(chatId).collection("calls").doc(activeCallId).update({status:"ended"})}catch(e){}closeCallUI()}
+function bind(){
+ $("signup").onclick=signupNow;$("login").onclick=loginNow;$("logout").onclick=()=>auth.signOut();$("savePic").onclick=uploadProfile;$("findBtn").onclick=findFriend;$("send").onclick=sendText;$("messageText").addEventListener("keydown",e=>{if(e.key==="Enter")sendText()});
+ $("back").onclick=()=>{stopMsgs();page("chats")};document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));
+ $("translateBtn").onclick=()=>window.open("https://translate.google.com/","_blank","noopener");
+ $("photoBtn").onclick=()=>$("photoFile").click();$("photoFile").onchange=e=>{sendPhoto(e.target.files[0]);e.target.value=""};
+ $("voiceRecord").onclick=toggleVoiceRecording;
+ $("voiceCall").onclick=()=>startCall(false);$("videoCall").onclick=()=>startCall(true);$("endCall").onclick=endCall;
+ document.addEventListener("click",()=>document.querySelectorAll(".menu").forEach(m=>m.classList.add("hidden")));
+}
+try{
+ firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();storage=firebase.storage();bind();say("Firebase connected. Sign up or log in.");
+ auth.onAuthStateChanged(async user=>{me=user;if(!user){stopRooms();stopMsgs();$("auth").classList.remove("hidden");$("app").classList.add("hidden");say("Firebase connected. Sign up or log in.");return}
+ $("auth").classList.add("hidden");$("app").classList.remove("hidden");
+ try{await loadMe();listenRooms();say("Signed in to AlLvar.")}catch(e){say("Profile error: "+errorText(e));console.error(e)}
+ });
+}catch(e){say("Firebase initialization error: "+errorText(e));console.error(e)}
+</script>
+</body>
+</html>
