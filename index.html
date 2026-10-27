@@ -1,385 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AlLvar</title>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AlLvar</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#fff;color:#17212b;font-family:Arial,sans-serif}
-header{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px;text-align:center}
-header h1{margin:0;color:#075e54;font-size:27px}
-header p{margin:5px 0 0;color:#667085;font-size:13px}
-main{max-width:780px;margin:auto;padding:12px}
-.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:10px 0}
-h2{font-size:19px;margin:0 0 10px}
-input,button{font:inherit;border-radius:9px;padding:11px;border:1px solid #d0d5dd}
-input{width:100%;margin:5px 0 9px;background:#fff;color:#17212b}
-button{background:#087f70;color:#fff;border:0;cursor:pointer;margin:3px}
-button.gray{background:#eef2f4;color:#17212b}
-button.red{background:#b42318}
-.hidden{display:none!important}
-.tabs{display:flex;gap:5px;flex-wrap:wrap}
-.tabs button{flex:1;min-width:80px}
-.row{display:flex;gap:7px;align-items:center}
-.row input{flex:1;min-width:0}
-.avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#e5e7eb;flex-shrink:0}
-.profile{display:flex;align-items:center;gap:10px}
-.grow{flex:1;min-width:0}
-.small{font-size:12px;color:#667085}
-.status{font-size:13px;white-space:pre-wrap;color:#475467}
-.item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eee}
-.item:last-child{border-bottom:0}
-.item .grow p{margin:4px 0 0;font-size:12px;color:#667085;overflow-wrap:anywhere}
-#messages{height:43vh;min-height:250px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff}
-.message{max-width:88%;width:max-content;min-width:100px;background:#f1f3f5;border:1px solid #e5e7eb;color:#17212b;border-radius:12px;padding:9px;margin:8px 0;overflow-wrap:anywhere}
-.message.mine{margin-left:auto;background:#e8f7ed}
-.meta{font-size:11px;color:#667085;margin-bottom:5px}
-.message img.media{display:block;max-width:100%;max-height:280px;border-radius:8px}
-.message audio{display:block;width:100%;max-width:260px}
-.message-actions{position:relative;display:flex;justify-content:flex-end;margin-top:4px}
-.dots{background:transparent;color:#344054;font-size:22px;padding:0 8px;margin:0;line-height:1.1}
-.menu{position:absolute;right:0;top:30px;z-index:5;background:#fff;border:1px solid #d0d5dd;box-shadow:0 4px 15px #0002;border-radius:9px;padding:5px;min-width:170px}
-.menu button{display:block;width:100%;text-align:left;margin:2px 0;background:#fff;color:#17212b;padding:9px}
-.menu button:hover{background:#f2f4f7}
-.chathead{display:flex;align-items:center;gap:9px;margin-bottom:10px}
-.chathead .grow{flex:1}
-.callbuttons{display:flex;gap:3px}
-.callbuttons button{padding:9px;font-size:13px}
-.hint{font-size:12px;color:#667085;line-height:1.45}
-.chat-composer{margin-top:8px}
-.chat-composer-main{display:flex;align-items:center;gap:5px}
-.chat-composer-main input{flex:1;min-width:0;margin:0}
-.chat-composer-main button{flex-shrink:0;margin:0;padding:10px 12px}
-.chat-composer-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
-.chat-composer-tools button{margin:0}
-</style>
-</head>
-<body>
-<header><h1>AlLvar</h1><p>Chat with friends around the world</p></header>
-<main>
-<div id="status" class="card status">Connecting to Firebase…</div>
-<section id="auth" class="card">
-<h2>Create account</h2>
-<input id="suName" placeholder="Username (3–20 letters, numbers or _)">
-<input id="suEmail" type="email" placeholder="Email address">
-<input id="suPass" type="password" placeholder="Password (at least 6 characters)">
-<button id="signup">Sign up</button>
-<hr>
-<h2>Log in</h2>
-<input id="liEmail" type="email" placeholder="Email address">
-<input id="liPass" type="password" placeholder="Password">
-<button id="login">Log in</button>
-</section>
-<section id="app" class="hidden">
-<div class="card">
- <div class="profile"><img id="myPic" class="avatar" alt="Profile picture"><div class="grow"><strong id="welcome"></strong><div class="small">Your profile</div></div><button class="gray" id="logout">Log out</button></div>
- <label class="small" for="picFile">Choose profile picture</label><input id="picFile" type="file" accept="image/*">
- <button id="savePic">Save profile picture</button>
-</div>
-<div class="card tabs"><button data-page="chats">Chats</button><button data-page="friends">Find Friends</button><button data-page="translate">Translate</button></div>
-<section id="chats" class="card"><h2>Your chats</h2><div id="rooms" class="status">Loading conversations…</div></section>
-<section id="friends" class="card hidden"><h2>Find Friends</h2><input id="findName" placeholder="Enter exact username"><button id="findBtn">Search</button><div id="found" class="status"></div></section>
-<section id="translate" class="card hidden"><h2>Translate</h2><button id="translateBtn">Open Google Translate</button></section>
-<section id="chat" class="card hidden">
- <div class="chathead"><img id="friendPic" class="avatar" alt="Friend profile picture"><div class="grow"><strong id="friendTitle">Private chat</strong><div class="small">Private conversation</div></div><div class="callbuttons"><button id="voiceCall" title="Voice call">📞</button><button id="videoCall" title="Video call">🎥</button></div><button class="gray" id="back">Back</button></div>
- <div id="callStatus" class="hint"></div>
- <div id="messages"></div>
- <div class="chat-composer">
-  <div class="chat-composer-main">
-   <input id="messageText" maxlength="2000" placeholder="Write a message...">
-   <button id="send" type="button">Send</button>
-  </div>
-  <div class="chat-composer-tools">
-   <button id="voiceRecord" type="button">🎤 Record</button>
-   <button class="gray" id="photoBtn" type="button">📷 Photo</button>
-   <input id="photoFile" type="file" accept="image/*" class="hidden">
-  </div>
-  <div class="small" style="margin-top:5px">Send a text, record a voice message, or share a photo.</div>
- </div>
- <p class="hint">Use the three-dot menu on your own message to edit or delete it. Calls need both users online and may require Firebase rules plus TURN/network configuration for reliable connection.</p>
- <div id="callArea" class="hidden">
-  <video id="localVideo" autoplay muted playsinline style="width:48%;background:#111;border-radius:8px"></video>
-  <video id="remoteVideo" autoplay playsinline style="width:48%;background:#111;border-radius:8px"></video>
-  <button id="endCall" class="red">End call</button>
- </div>
-</section>
-</section>
-</main>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#101923;color:#f5f7fa;min-height:100vh;padding:10px}.card{width:100%;max-width:480px;margin:10px auto;background:#1d2936;padding:16px;border-radius:18px;box-shadow:0 8px 30px #0004}h1,h2{text-align:center}.subtitle{text-align:center;color:#b9c4d0;margin-bottom:25px}label{display:block;margin:15px 0 7px}input{width:100%;padding:14px;border:1px solid #435365;border-radius:9px;background:#101923;color:white;font-size:16px}button{width:100%;padding:14px;margin-top:12px;border:0;border-radius:9px;font-size:16px;font-weight:bold;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.primary{background:white;color:#101923}.secondary{background:#344557;color:white}#status,#searchStatus,#chatStatus{text-align:center;line-height:1.5;margin-top:18px;color:#dce5ee;overflow-wrap:anywhere}.hidden{display:none!important}.userRow{padding:14px;margin-top:12px;background:#344557;border-radius:10px}.userName{font-weight:bold;overflow-wrap:anywhere}.smallText{color:#c3cfdb;font-size:14px;margin-top:5px}#chatMessages{min-height:200px;max-height:400px;overflow-y:auto;padding:12px;background:#101923;border-radius:10px;overflow-x:hidden;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:8px}.chatMessage{position:relative;padding:9px 11px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;width:fit-content;max-width:82%;min-width:35px;margin:0;line-height:1.35}.myMessage{background:#245b49;align-self:flex-end;margin-left:auto}.friendMessage{background:#344557;align-self:flex-start;margin-right:auto}.messageMeta{font-size:11px;color:#d4e0e8;text-align:right;margin-top:6px}.messageTop{display:flex;align-items:flex-start;gap:8px}.messageBody{flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}.messageMenuWrap{position:relative;flex-shrink:0}.messageMenuButton{width:24px;height:24px;padding:0;margin:0;background:transparent;color:#eaf0f5;font-size:20px;line-height:20px;font-weight:bold;border-radius:5px}.messageMenu{position:absolute;right:0;top:25px;z-index:20;min-width:165px;background:#fff;color:#17212b;border-radius:8px;box-shadow:0 5px 18px #0008;padding:5px}.messageMenu button{display:block;width:100%;margin:0;padding:10px;text-align:left;background:#fff;color:#17212b;font-size:14px;font-weight:normal;border-radius:5px}.messageMenu button:active{background:#e7edf3}.messageMenu .danger{color:#b42318}.composer{display:flex;gap:7px;align-items:stretch}.composer input{min-width:0;flex:1}.composer button{width:auto;flex-shrink:0;padding:10px;margin-top:0;background:white;color:#101923}#photoButton{font-size:20px;padding:10px 13px}#viewOnceButton{font-size:13px;padding:10px 8px;min-width:54px}#viewOnceButton.enabled{background:#245b49;color:white}#sendChatMessage{width:46px;min-width:46px;height:46px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:0}#sendChatMessage svg{width:23px;height:23px;display:block;fill:none;stroke:#101923;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}.voiceControls{margin-top:9px;padding:12px;background:#263442;border-radius:10px}.voiceControlRow{display:flex;gap:8px;align-items:center}.voiceControlRow button{flex:1;width:auto;margin:8px 0 0;padding:10px;font-size:14px}.voiceTimer{font-size:14px;color:#fff;display:flex;align-items:center;gap:8px}.recordDot{width:9px;height:9px;border-radius:50%;background:#f04444;display:inline-block}.voicePreview{width:100%;margin-top:10px}.voiceSendButton{background:white;color:#101923}.chatAudio{display:block;width:min(260px,70vw);max-width:100%;height:42px}.chatMessage.audioMessage{max-width:88%;min-width:0}.chatMessage.photoMessage,.chatMessage.videoMessage{width:fit-content;max-width:85%;min-width:0;padding:0;background:transparent;border-radius:8px}.chatMessage.photoMessage .messageTop,.chatMessage.videoMessage .messageTop{display:block;position:relative;width:fit-content;max-width:100%;padding:0;margin:0}.chatMessage.photoMessage .messageBody,.chatMessage.videoMessage .messageBody{display:block;flex:none;width:fit-content;max-width:100%;min-width:0;padding:0;margin:0;line-height:0;white-space:normal}.chatMessage.photoMessage .messageMenuWrap,.chatMessage.videoMessage .messageMenuWrap{position:absolute;top:4px;right:4px;z-index:5;margin:0;padding:0;background:rgba(0,0,0,.5);border-radius:5px}.chatMessage.photoMessage .messageMenuButton,.chatMessage.videoMessage .messageMenuButton{display:block;margin:0}.chatPhoto{display:block;width:auto;height:auto;max-width:min(280px,75vw);max-height:300px;object-fit:contain;border-radius:8px;margin:0;padding:0;background:#000;cursor:pointer}.chatVideo{display:block;width:auto;height:auto;max-width:min(280px,75vw);max-height:300px;object-fit:contain;border-radius:8px;margin:0;padding:0;border:0;background:#000}.mediaError{padding:8px;font-size:13px;color:#ffd0d0;line-height:1.35;overflow-wrap:anywhere}.viewOncePrompt{padding:16px 14px;background:#263442;color:white;border-radius:9px;line-height:1.4;font-size:14px;min-width:190px;text-align:center}.viewOncePrompt button{width:auto;margin:10px 0 0;padding:10px 14px;background:white;color:#101923}.photoViewer{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:18px}.photoViewer.hidden{display:none!important}#photoViewerImage{display:block;max-width:100%;max-height:88vh;width:auto;height:auto;object-fit:contain}.closePhotoViewer{position:absolute;top:12px;right:12px;width:44px;height:44px;margin:0;padding:0;border-radius:50%;background:#263442;color:white;font-size:24px;z-index:2}
+</style></head><body>
+<div class="card" id="authCard"><h1>AlLvar</h1><div class="subtitle">Chat with friends around the world</div><label for="username">Username (for sign-up)</label><input id="username" placeholder="Choose a username" maxlength="20" autocomplete="username"><label for="email">Email address</label><input id="email" type="email" placeholder="you@example.com" autocomplete="email"><label for="password">Password</label><input id="password" type="password" placeholder="At least 6 characters" autocomplete="current-password"><button class="primary" id="signupBtn">Create account</button><button class="secondary" id="loginBtn">Log in</button><div id="status" role="status">Connect to AlLvar to get started.</div></div>
+<div class="card hidden" id="friendsSection"><h1>AlLvar</h1><h2>Find Friends</h2><p class="subtitle">Search for people on AlLvar by username.</p><label for="friendSearch">Username</label><input id="friendSearch" placeholder="Enter a username" maxlength="20"><button class="primary" id="searchFriendsBtn">Search</button><button class="secondary" id="openChatsBtn">My chats</button><button class="secondary" id="logoutBtn">Log out</button><div id="searchStatus" role="status"></div><div id="friendsResults"></div><div id="conversationList"></div></div>
+<div class="card hidden" id="chatScreen"><h1>AlLvar</h1><h2 id="chatFriendName">Private Chat</h2><div id="chatStatus" role="status">Loading messages...</div><div id="chatMessages"></div><label for="chatMessageInput">Your message</label><div class="composer"><input id="chatMessageInput" placeholder="Type a message" maxlength="2000"><input id="photoPicker" type="file" accept="image/*,video/*" class="hidden"><button class="primary" id="photoButton" type="button" aria-label="Choose a picture or video" title="Choose a picture or video">📎</button><button class="primary" id="viewOnceButton" type="button" aria-pressed="false" title="Send next picture/video so recipient can open it once">👁 OFF</button><button class="primary" id="sendChatMessage" type="button" aria-label="Record voice message" title="Record voice message"></button></div><div id="voiceControls" class="voiceControls hidden" aria-live="polite"><div class="voiceTimer" id="voiceTimer"><span class="recordDot"></span><span>Recording: 00:00</span></div><div class="voiceControlRow"><button class="secondary" id="pauseVoiceButton" type="button">⏸ Pause</button><button class="secondary hidden" id="resumeVoiceButton" type="button">▶ Resume</button><button class="secondary" id="cancelVoiceButton" type="button">✕ Cancel</button></div><div id="voicePreviewArea"></div></div><div class="smallText">Attach a picture or video using 📎. Turn 👁 ON before attaching media to send it as View Once. Tap the microphone to record a voice message; you can pause and resume it before sending.</div><button class="secondary" id="backToFriends">Back to Find Friends</button></div>
+<div id="photoViewer" class="photoViewer hidden" role="dialog" aria-modal="true" aria-label="Photo viewer"><button id="closePhotoViewer" class="closePhotoViewer" type="button" aria-label="Close photo viewer">✕</button><img id="photoViewerImage" alt="Opened photo"></div>
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyD3v4R98m7mN_0rC8h_FOdcFRxgs9XCzOQ",
-  authDomain: "allvar-new.firebaseapp.com",
-  projectId: "allvar-new",
-  storageBucket: "allvar-new.firebasestorage.app",
-  messagingSenderId: "999407977980",
-  appId: "1:999407977980:web:acaa25e2bd639bd941de79",
-  measurementId: "G-F76PLJTL2X"
-};
+const SUPABASE_URL="https://ztzcktmupekwntouwjcu.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_gRSsT3ATRftk9ocS9XXUPA_amhmFR9E";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=id=>document.getElementById(id);
-const fallback="data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#e5e7eb"/><circle cx="50" cy="35" r="18" fill="#98a2b3"/><path d="M15 95c2-24 16-36 35-36s33 12 35 36" fill="#98a2b3"/></svg>');
-let auth,db,storage,me=null,myName="",myPhoto="",friendUid="",friendName="",friendPhoto="",chatId="",roomsUnsub=null,msgUnsub=null;
-let pc=null,localStream=null,activeCallId=null,callUnsub=null;
-const pcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
-function say(t){$("status").textContent=t}
-function setPic(el,url){el.src=url||fallback;el.onerror=()=>el.src=fallback}
-function validName(n){return /^[A-Za-z0-9_]{3,20}$/.test(n)}
-function roomId(a,b){return [a,b].sort().join("_")}
-function stamp(){return firebase.firestore.FieldValue.serverTimestamp()}
-function stopRooms(){if(roomsUnsub){roomsUnsub();roomsUnsub=null}}
-function stopMsgs(){if(msgUnsub){msgUnsub();msgUnsub=null}}
-function page(p){["chats","friends","translate","chat"].forEach(x=>$(x).classList.toggle("hidden",x!==p))}
-function errorText(e){return e&&e.message?e.message:String(e)}
-async function signupNow(){
- let username=$("suName").value.trim(),email=$("suEmail").value.trim(),password=$("suPass").value;
- if(!validName(username)){alert("Username must be 3–20 letters, numbers, or underscores.");return}
- if(!email||password.length<6){alert("Enter your email and a password with at least 6 characters.");return}
- try{
-  const key=username.toLowerCase(),existing=await db.collection("usernames").doc(key).get();
-  if(existing.exists){alert("That username is already taken.");return}
-  const c=await auth.createUserWithEmailAndPassword(email,password);
-  const batch=db.batch();
-  batch.set(db.collection("users").doc(c.user.uid),{username,usernameLower:key,photoURL:"",createdAt:stamp()});
-  batch.set(db.collection("usernames").doc(key),{uid:c.user.uid,username,usernameLower:key});
-  await batch.commit();
- }catch(e){alert("Sign-up error: "+errorText(e))}
-}
-async function loginNow(){try{await auth.signInWithEmailAndPassword($("liEmail").value.trim(),$("liPass").value)}catch(e){alert("Login error: "+errorText(e))}}
-async function loadMe(){
- const s=await db.collection("users").doc(me.uid).get(),d=s.exists?s.data():{};
- myName=d.username||(me.email||"user").split("@")[0];myPhoto=d.photoURL||"";
- $("welcome").textContent="Welcome, "+myName;setPic($("myPic"),myPhoto);
-}
-async function uploadProfile(){
- const f=$("picFile").files[0];if(!f){alert("Choose a profile picture first.");return}
- if(!f.type.startsWith("image/")||f.size>5*1024*1024){alert("Choose an image smaller than 5 MB.");return}
- try{const path="profilePictures/"+me.uid+"/profile_"+Date.now();const ref=storage.ref(path);await ref.put(f,{contentType:f.type});const url=await ref.getDownloadURL();await db.collection("users").doc(me.uid).set({photoURL:url,photoPath:path},{merge:true});myPhoto=url;setPic($("myPic"),url);alert("Profile picture saved.")}
- catch(e){alert("Profile picture error: "+errorText(e))}
-}
-async function findFriend(){
- const n=$("findName").value.trim();if(!validName(n)){$("found").textContent="Enter a valid username.";return}
- $("found").textContent="Searching…";
- try{const map=await db.collection("usernames").doc(n.toLowerCase()).get();if(!map.exists){$("found").textContent="No account found.";return}
- const uid=map.data().uid;if(uid===me.uid){$("found").textContent="That is your own username.";return}
- const p=await db.collection("users").doc(uid).get();if(!p.exists){$("found").textContent="Profile not found.";return}
- const d=p.data(),name=d.username||n,photo=d.photoURL||"";$("found").innerHTML="";
- const row=document.createElement("div");row.className="item";const img=document.createElement("img");img.className="avatar";setPic(img,photo);
- const info=document.createElement("div");info.className="grow";const strong=document.createElement("strong");strong.textContent=name;info.append(strong);
- const b=document.createElement("button");b.textContent="Message";b.onclick=()=>openChat(uid,name,photo);row.append(img,info,b);$("found").append(row);
- }catch(e){$("found").textContent="Search error: "+errorText(e)}
-}
-async function openChat(uid, name, photo = "") {
-  if (!me || uid === me.uid) return;
-  stopMsgs();
-  friendUid = uid;
-  friendName = name || "Friend";
-  friendPhoto = photo || "";
-  chatId = roomId(me.uid, uid);
-  page("chat");
-  $("friendTitle").textContent = friendName;
-  setPic($("friendPic"), friendPhoto);
-  $("messages").innerHTML = "";
-  try {
-    const profile = await db.collection("users").doc(uid).get();
-    if (profile.exists) {
-      const data = profile.data();
-      friendName = data.username || friendName;
-      friendPhoto = data.photoURL || friendPhoto;
-      $("friendTitle").textContent = friendName;
-      setPic($("friendPic"), friendPhoto);
-    }
-    const ref = db.collection("privateChats").doc(chatId);
-    const existingChat = await ref.get();
-    if (existingChat.exists) {
-      listenMessages();
-    } else {
-      $("messages").innerHTML = '<p style="text-align:center;color:#888;">Say hello! Send your first message to start this chat.</p>';
-    }
-  } catch (e) {
-    alert("Chat error (" + (e.code || "unknown") + "): " + (e.message || e));
-    console.error("Open chat error:", e);
-  }
-}
-function listenRooms(){
- stopRooms();$("rooms").textContent="Loading conversations…";
- roomsUnsub=db.collection("privateChats").where("members","array-contains",me.uid).onSnapshot(async snap=>{
-  try{
-   $("rooms").innerHTML="";
-   if(snap.empty){$("rooms").textContent="No chats yet. Find Friends to start a private chat.";return}
-   const uniquePeople=new Set();
-   for(const doc of snap.docs){
-    const d=doc.data(),other=(d.members||[]).find(x=>x!==me.uid);
-    if(!other||uniquePeople.has(other))continue;
-    uniquePeople.add(other);
-    let n="Friend",photo="";
-    try{const p=await db.collection("users").doc(other).get();if(p.exists){n=p.data().username||n;photo=p.data().photoURL||""}}catch(e){}
-    const row=document.createElement("div");row.className="item";
-    const img=document.createElement("img");img.className="avatar";setPic(img,photo);
-    const info=document.createElement("div");info.className="grow";
-    const bname=document.createElement("strong");bname.textContent=n;
-    const preview=document.createElement("p");preview.textContent=d.lastMessage||"Private conversation";
-    info.append(bname,preview);
-    const open=document.createElement("button");open.textContent="Open";open.onclick=()=>openChat(other,n,photo);
-    row.append(img,info,open);$("rooms").append(row);
-   }
-   if(!$("rooms").hasChildNodes())$("rooms").textContent="No chats yet. Find Friends to start a private chat.";
-  }catch(e){$("rooms").textContent="Could not display chats: "+errorText(e);console.error("Display chats error:",e)}
- },e=>{$("rooms").textContent="Chats error: "+(e.code||"")+" — "+(e.message||e);console.error("Chats query error:",e)});
-}
-function listenMessages(){
- stopMsgs();msgUnsub=db.collection("privateChats").doc(chatId).collection("messages").orderBy("createdAt","asc").limit(100).onSnapshot(s=>{
- $("messages").innerHTML="";s.forEach(doc=>{const d=doc.data();if((d.hiddenFor||[]).includes(me.uid))return;renderMsg(doc.id,d)});$("messages").scrollTop=$("messages").scrollHeight
- },e=>{$("messages").textContent="Cannot load messages: "+errorText(e);console.error(e)});
-}
-function renderMsg(id,d){
- const mine=d.uid===me.uid,box=document.createElement("div");box.className="message"+(mine?" mine":"");
- const meta=document.createElement("div");meta.className="meta";meta.textContent=(mine?"You":(d.username||friendName))+(d.edited?" · edited":"");box.append(meta);
- if(d.deletedForEveryone){const gone=document.createElement("i");gone.textContent="This message was deleted.";box.append(gone)}
- else if(d.mediaType==="photo"&&d.mediaUrl){const im=document.createElement("img");im.className="media";im.src=d.mediaUrl;im.alt="Photo";box.append(im)}
- else if(d.mediaType==="audio"&&d.mediaUrl){const audio=document.createElement("audio");audio.controls=true;audio.src=d.mediaUrl;box.append(audio)}
- else{const body=document.createElement("div");body.textContent=d.text||"";box.append(body)}
- const actionWrap=document.createElement("div");actionWrap.className="message-actions";const dots=document.createElement("button");dots.className="dots";dots.textContent="⋮";dots.setAttribute("aria-label","Message options");actionWrap.append(dots);
- const menu=document.createElement("div");menu.className="menu hidden";
- function item(label,fn,red=false){const b=document.createElement("button");b.textContent=label;if(red)b.style.color="#b42318";b.onclick=()=>{menu.classList.add("hidden");fn()};menu.append(b)}
- if(mine&&!d.deletedForEveryone){item("Edit message",()=>editMsg(id,d));item("Delete for everyone",()=>deleteEveryone(id,d),true)}
- if(!d.deletedForEveryone)item("Delete for me",()=>deleteMe(id,d),true);
- dots.onclick=e=>{e.stopPropagation();document.querySelectorAll(".menu").forEach(m=>{if(m!==menu)m.classList.add("hidden")});menu.classList.toggle("hidden")};
- actionWrap.append(menu);box.append(actionWrap);$("messages").append(box);
-}
-function recent(d){return d.createdAt&&d.createdAt.toDate&&Date.now()-d.createdAt.toDate().getTime()<=15*60*1000}
-async function editMsg(id,d){if(!recent(d)){alert("Editing is available within 15 minutes.");return}const t=prompt("Edit message:",d.text||"");if(t===null)return;const text=t.trim();if(!text||text.length>2000){alert("Message must be 1–2000 characters.");return}try{await db.collection("privateChats").doc(chatId).collection("messages").doc(id).update({text,edited:true,editedAt:stamp()})}catch(e){alert("Edit failed: "+errorText(e))}}
-async function deleteEveryone(id,d){if(!recent(d)){alert("Delete for everyone is available within 15 minutes.");return}if(!confirm("Delete this message for everyone?"))return;try{await db.collection("privateChats").doc(chatId).collection("messages").doc(id).update({text:"",deletedForEveryone:true,deletedAt:stamp()})}catch(e){alert("Delete failed: "+errorText(e))}}
-async function deleteMe(id,d){if(!confirm("Hide this message only for you?"))return;try{const hidden=[...new Set([...(d.hiddenFor||[]),me.uid])];await db.collection("privateChats").doc(chatId).collection("messages").doc(id).update({hiddenFor:hidden})}catch(e){alert("Delete for me failed: "+errorText(e))}}
-async function sendText() {
-  const text = $("messageText").value.trim();
-  if (!text || !me || !friendUid || !chatId) return;
-  try {
-    const room = db.collection("privateChats").doc(chatId);
-    const roomSnap = await room.get();
-    if (!roomSnap.exists) {
-      await room.set({
-        members: [me.uid, friendUid].sort(),
-        createdAt: stamp(),
-        lastMessage: text,
-        lastMessageAt: stamp(),
-        lastMessageBy: me.uid
-      });
-    } else {
-      await room.update({lastMessage:text,lastMessageAt:stamp(),lastMessageBy:me.uid});
-    }
-    await room.collection("messages").add({
-      text:text,uid:me.uid,username:myName,deliveredTo:[],readBy:[],hiddenFor:[],createdAt:stamp()
-    });
-    $("messageText").value = "";
-    stopMsgs();
-    listenMessages();
-  } catch (e) {
-    console.error("Send message error:", e);
-    alert("Send failed: " + errorText(e));
-  }
-}
-async function sendPhoto(file){
- if(!file)return;if(!file.type.startsWith("image/")||file.size>8*1024*1024){alert("Choose an image smaller than 8 MB.");return}
- try{const path="chatPhotos/"+chatId+"/"+me.uid+"_"+Date.now();const ref=storage.ref(path);await ref.put(file,{contentType:file.type});const url=await ref.getDownloadURL();const room=db.collection("privateChats").doc(chatId);const snap=await room.get();if(!snap.exists){await room.set({members:[me.uid,friendUid].sort(),createdAt:stamp(),lastMessage:"📷 Photo",lastMessageAt:stamp(),lastMessageBy:me.uid})}else{await room.update({lastMessage:"📷 Photo",lastMessageAt:stamp(),lastMessageBy:me.uid})}await room.collection("messages").add({text:"",mediaType:"photo",mediaUrl:url,storagePath:path,uid:me.uid,username:myName,deliveredTo:[],readBy:[],hiddenFor:[],createdAt:stamp()});stopMsgs();listenMessages()}
- catch(e){alert("Photo send failed: "+errorText(e))}
-}
-let recorder=null,recordedChunks=[],recording=false;
-async function toggleVoiceRecording(){
- if(!me||!friendUid||!chatId){alert("Open a private chat first.");return}
- if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){alert("Voice recording needs a supported browser and a secure HTTPS page.");return}
- if(!recording){
-  try{
-   const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-   recordedChunks=[];
-   let mimeType="";
-   if(MediaRecorder.isTypeSupported("audio/webm"))mimeType="audio/webm";
-   recorder=new MediaRecorder(stream,mimeType?{mimeType}:undefined);
-   recorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
-   recorder.onstop=async()=>{
-    stream.getTracks().forEach(t=>t.stop());
-    $("voiceRecord").textContent="🎤 Record";
-    recording=false;
-    if(!recordedChunks.length){alert("No audio was recorded.");return}
-    const blob=new Blob(recordedChunks,{type:recorder.mimeType||"audio/webm"});
-    if(blob.size>10*1024*1024){alert("Voice recording is too large. Please record a shorter message.");return}
-    try{
-     $("voiceRecord").disabled=true;
-     $("voiceRecord").textContent="Sending…";
-     const path="chatAudio/"+chatId+"/"+me.uid+"_"+Date.now()+".webm";
-     const fileRef=storage.ref(path);
-     await fileRef.put(blob,{contentType:blob.type||"audio/webm"});
-     const url=await fileRef.getDownloadURL();
-     const room=db.collection("privateChats").doc(chatId),snap=await room.get();
-     if(!snap.exists){await room.set({members:[me.uid,friendUid].sort(),createdAt:stamp(),lastMessage:"🎤 Voice message",lastMessageAt:stamp(),lastMessageBy:me.uid})}
-     else{await room.update({lastMessage:"🎤 Voice message",lastMessageAt:stamp(),lastMessageBy:me.uid})}
-     await room.collection("messages").add({text:"",mediaType:"audio",mediaUrl:url,storagePath:path,uid:me.uid,username:myName,deliveredTo:[],readBy:[],hiddenFor:[],createdAt:stamp()});
-     stopMsgs();listenMessages();
-    }catch(e){alert("Voice message send failed: "+errorText(e))}
-    finally{$("voiceRecord").disabled=false;$("voiceRecord").textContent="🎤 Record"}
-   };
-   recorder.start();
-   recording=true;
-   $("voiceRecord").textContent="⏹ Stop & Send";
-  }catch(e){alert("Microphone access failed: "+errorText(e))}
- }else if(recorder&&recorder.state!=="inactive"){recorder.stop()}
-}
-function closeCallUI(){if(callUnsub){callUnsub();callUnsub=null}if(pc){pc.close();pc=null}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}$("localVideo").srcObject=null;$("remoteVideo").srcObject=null;$("callArea").classList.add("hidden");$("callStatus").textContent="";activeCallId=null}
-async function startCall(video){
- try{
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Error("Calls require HTTPS and a browser that supports microphone/camera.");
-  closeCallUI();localStream=await navigator.mediaDevices.getUserMedia({audio:true,video});$("localVideo").srcObject=localStream;$("localVideo").style.display=video?"block":"none";$("remoteVideo").style.display=video?"block":"none";$("callArea").classList.remove("hidden");$("callStatus").textContent="Starting "+(video?"video":"voice")+" call…";
-  pc=new RTCPeerConnection(pcConfig);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.ontrack=e=>{if(e.streams[0])$("remoteVideo").srcObject=e.streams[0]};
-  const callRef=db.collection("privateChats").doc(chatId).collection("calls").doc();
-  activeCallId=callRef.id;
-  const offerCandidates=callRef.collection("offerCandidates");
-  pc.onicecandidate=e=>{if(e.candidate)offerCandidates.add(e.candidate.toJSON()).catch(console.error)};
-  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
-  await callRef.set({caller:me.uid,callee:friendUid,kind:video?"video":"voice",offer:{type:offer.type,sdp:offer.sdp},status:"ringing",createdAt:stamp()});
-  callUnsub=callRef.onSnapshot(async s=>{
-   const d=s.data();if(!d)return;
-   if(d.answer&&pc&&!pc.currentRemoteDescription){await pc.setRemoteDescription(new RTCSessionDescription(d.answer));$("callStatus").textContent="Call connected."}
-   if(d.status==="ended")closeCallUI();
-  });
-  callRef.collection("answerCandidates").onSnapshot(s=>s.docChanges().forEach(ch=>{if(ch.type==="added"&&pc)pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(console.error)}));
-  $("callStatus").textContent="Calling "+friendName+"…";
- }catch(e){closeCallUI();alert("Could not start call: "+errorText(e))}
-}
-function watchCalls(){
- const calls=db.collection("privateChats").doc(chatId).collection("calls");
- calls.where("callee","==",me.uid).where("status","==","ringing").onSnapshot(s=>s.docChanges().forEach(ch=>{
-  if(ch.type!=="added")return;const d=ch.doc.data();if(!confirm((d.kind==="video"?"Video":"Voice")+" call incoming. Accept?"))return;
-  acceptCall(ch.doc.id,d).catch(e=>alert("Could not answer call: "+errorText(e)));
- }),e=>console.warn("Incoming call listener:",e.message));
-}
-async function acceptCall(id,d){
- closeCallUI();activeCallId=id;localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:d.kind==="video"});$("localVideo").srcObject=localStream;$("localVideo").style.display=d.kind==="video"?"block":"none";$("remoteVideo").style.display=d.kind==="video"?"block":"none";$("callArea").classList.remove("hidden");pc=new RTCPeerConnection(pcConfig);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.ontrack=e=>{if(e.streams[0])$("remoteVideo").srcObject=e.streams[0]};
- const ref=db.collection("privateChats").doc(chatId).collection("calls").doc(id),offerCandidates=ref.collection("offerCandidates"),answerCandidates=ref.collection("answerCandidates");
- pc.onicecandidate=e=>{if(e.candidate)answerCandidates.add(e.candidate.toJSON()).catch(console.error)};
- await pc.setRemoteDescription(new RTCSessionDescription(d.offer));const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await ref.update({answer:{type:answer.type,sdp:answer.sdp},status:"answered"});
- offerCandidates.onSnapshot(s=>s.docChanges().forEach(ch=>{if(ch.type==="added"&&pc)pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(console.error)}));
- callUnsub=ref.onSnapshot(s=>{if(s.data()&&s.data().status==="ended")closeCallUI()});$("callStatus").textContent="Call connected.";
-}
-async function endCall(){try{if(activeCallId)await db.collection("privateChats").doc(chatId).collection("calls").doc(activeCallId).update({status:"ended"})}catch(e){}closeCallUI()}
-function bind(){
- $("signup").onclick=signupNow;$("login").onclick=loginNow;$("logout").onclick=()=>auth.signOut();$("savePic").onclick=uploadProfile;$("findBtn").onclick=findFriend;$("send").onclick=sendText;$("messageText").addEventListener("keydown",e=>{if(e.key==="Enter")sendText()});
- $("back").onclick=()=>{stopMsgs();page("chats")};document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));
- $("translateBtn").onclick=()=>window.open("https://translate.google.com/","_blank","noopener");
- $("photoBtn").onclick=()=>$("photoFile").click();$("photoFile").onchange=e=>{sendPhoto(e.target.files[0]);e.target.value=""};
- $("voiceRecord").onclick=toggleVoiceRecording;
- $("voiceCall").onclick=()=>startCall(false);$("videoCall").onclick=()=>startCall(true);$("endCall").onclick=endCall;
- document.addEventListener("click",()=>document.querySelectorAll(".menu").forEach(m=>m.classList.add("hidden")));
-}
-try{
- firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();storage=firebase.storage();bind();say("Firebase connected. Sign up or log in.");
- auth.onAuthStateChanged(async user=>{me=user;if(!user){stopRooms();stopMsgs();$("auth").classList.remove("hidden");$("app").classList.add("hidden");say("Firebase connected. Sign up or log in.");return}
- $("auth").classList.add("hidden");$("app").classList.remove("hidden");
- try{await loadMe();listenRooms();say("Signed in to AlLvar.")}catch(e){say("Profile error: "+errorText(e));console.error(e)}
- });
-}catch(e){say("Firebase initialization error: "+errorText(e));console.error(e)}
-</script>
-</body>
-</html>
+let currentUser=null,activeChatId=null,activeFriendId=null,activeFriendUsername="",messageTimer=null,conversationTimer=null,loadingMessages=false,loadingConversations=false,sendingMessage=false,sendingMedia=false,viewOnceEnabled=false;
+const renderedMessageElements=new Map();let renderedChatId=null;const privatePhotoUrlCache=new Map();const viewOnceOpenMessages=new Set();
+const PHOTO_PREFIX="__ALLVAR_PRIVATE_PHOTO__:",VIDEO_PREFIX="__ALLVAR_PRIVATE_VIDEO__:",AUDIO_PREFIX="__ALLVAR_PRIVATE_AUDIO__:",DELETED_MESSAGE_TEXT="This message was deleted";
+let mediaRecorder=null,recordedChunks=[],recordedVoiceBlob=null,recordedVoiceUrl=null,voiceTimerInterval=null,voiceStartedAt=0,voiceElapsedBeforePause=0,voicePaused=false,voiceRecording=false,voiceBusy=false;
+function status(message){$("status").textContent=message}function setChatStatus(message){$("chatStatus").textContent=message}
+const SEND_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></svg>';
+const MIC_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>';
+const STOP_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+function updateComposerButton(){const input=$("chatMessageInput"),button=$("sendChatMessage"),hasText=Boolean(input.value.trim());if(hasText){button.innerHTML=SEND_ICON;button.setAttribute("aria-label","Send message");button.title="Send message"}else if(voiceRecording){button.innerHTML=STOP_ICON;button.setAttribute("aria-label","Stop recording and preview voice message");button.title="Stop recording"}else{button.innerHTML=MIC_ICON;button.setAttribute("aria-label","Record voice message");button.title="Record voice message"}}
+function updateViewOnceButton(){const button=$("viewOnceButton");button.textContent=viewOnceEnabled?"👁 ON":"👁 OFF";button.classList.toggle("enabled",viewOnceEnabled);button.setAttribute("aria-pressed",String(viewOnceEnabled))}
+async function saveProfile(user,usernameFromSignup=""){const username=(usernameFromSignup||user.user_metadata?.username||"").trim();if(!username)throw new Error("Your username is missing. Please sign up with a username.");const {error}=await supabaseClient.from("profiles").upsert({id:user.id,username,display_name:username},{onConflict:"id"});if(error)throw error}
+function showFriends(){$("authCard").classList.add("hidden");$("chatScreen").classList.add("hidden");$("friendsSection").classList.remove("hidden");$("searchStatus").textContent="Welcome to AlLvar! Search for a username.";loadConversations();startConversationRefresh()}
+function showLogin(){stopTimers();$("friendsSection").classList.add("hidden");$("chatScreen").classList.add("hidden");$("authCard").classList.remove("hidden")}
+function stopTimers(){if(messageTimer){clearInterval(messageTimer);messageTimer=null}if(conversationTimer){clearInterval(conversationTimer);conversationTimer=null}}
+function startConversationRefresh(){if(conversationTimer)clearInterval(conversationTimer);conversationTimer=setInterval(()=>{if(currentUser&&!$("friendsSection").classList.contains("hidden"))loadConversations()},15000)}
+function startMessageRefresh(){if(messageTimer)clearInterval(messageTimer);messageTimer=setInterval(()=>{if(currentUser&&activeChatId&&!$("chatScreen").classList.contains("hidden"))loadPrivateMessages()},2500)}
+function resetRenderedMessages(chatId){renderedMessageElements.clear();renderedChatId=String(chatId||"");$("chatMessages").replaceChildren();viewOnceOpenMessages.clear()}
+async function openPrivateChat(friendId,friendUsername){if(!currentUser){alert("Please log in first.");return}if(friendId===currentUser.id){alert("You cannot open a private chat with yourself.");return}$("searchStatus").textContent="Opening conversation...";try{let {data:chat,error}=await supabaseClient.from("conversation").select("*").or(`and(user_one.eq.${currentUser.id},user_two.eq.${friendId}),and(user_one.eq.${friendId},user_two.eq.${currentUser.id})`).limit(1).maybeSingle();if(error)throw error;if(!chat){const result=await supabaseClient.from("conversation").insert({user_one:currentUser.id,user_two:friendId}).select("*").single();if(result.error)throw result.error;chat=result.data}if(messageTimer){clearInterval(messageTimer);messageTimer=null}activeChatId=chat.id;activeFriendId=friendId;activeFriendUsername=friendUsername;resetRenderedMessages(activeChatId);$("chatFriendName").textContent="Chat with @"+friendUsername;$("friendsSection").classList.add("hidden");$("chatScreen").classList.remove("hidden");setChatStatus("Loading messages...");await loadPrivateMessages();startMessageRefresh()}catch(error){alert("Chat error: "+error.message);$("searchStatus").textContent="Could not open chat."}}
+async function markMessageStatus(messageId,newStatus){const {data,error}=await supabaseClient.rpc("mark_message_status",{p_message_id:messageId,p_status:newStatus});if(error){console.warn("Could not update message status:",error.message);return false}return data===true}
+function hiddenMessageStorageKey(){return "allvar_hidden_messages_"+(currentUser?currentUser.id:"guest")}function getHiddenMessageIds(){try{return new Set(JSON.parse(localStorage.getItem(hiddenMessageStorageKey())||"[]"))}catch(_){return new Set()}}function hideMessageForMe(messageId){const ids=getHiddenMessageIds();ids.add(String(messageId));localStorage.setItem(hiddenMessageStorageKey(),JSON.stringify([...ids]))}
+function closeMessageMenus(){document.querySelectorAll(".messageMenu").forEach(menu=>menu.classList.add("hidden"))}
+function isPhotoMessage(message){return typeof message.content==="string"&&message.content.startsWith(PHOTO_PREFIX)}function isVideoMessage(message){return typeof message.content==="string"&&message.content.startsWith(VIDEO_PREFIX)}function isAudioMessage(message){return typeof message.content==="string"&&message.content.startsWith(AUDIO_PREFIX)}function isMediaMessage(message){return isPhotoMessage(message)||isVideoMessage(message)||isAudioMessage(message)}
+function mediaPathFromMessage(message){if(isPhotoMessage(message))return message.content.slice(PHOTO_PREFIX.length);if(isVideoMessage(message))return message.content.slice(VIDEO_PREFIX.length);if(isAudioMessage(message))return message.content.slice(AUDIO_PREFIX.length);return ""}
+async function editMessage(message){if(isMediaMessage(message)){alert("Picture, video and voice messages cannot be edited. You can delete them instead.");return}const revised=prompt("Edit your message:",message.content||"");if(revised===null)return;const content=revised.trim();if(!content){alert("A message cannot be empty.");return}const {error}=await supabaseClient.from("messages").update({content,edited_at:new Date().toISOString()}).eq("id",message.id).eq("sender_id",currentUser.id);if(error){alert("Could not edit message: "+error.message);return}await loadPrivateMessages()}
+async function deleteMessageForEveryone(message){if(!currentUser||message.sender_id!==currentUser.id){alert("You can only delete your own messages for everyone.");return}if(!confirm("Delete this message for everyone?"))return;const mediaPath=isMediaMessage(message)?mediaPathFromMessage(message):null;const {error:updateError}=await supabaseClient.from("messages").update({content:DELETED_MESSAGE_TEXT,edited_at:new Date().toISOString()}).eq("id",message.id).eq("sender_id",currentUser.id);if(updateError){alert("Could not delete for everyone: "+updateError.message);return}if(mediaPath){privatePhotoUrlCache.delete(mediaPath);const {error:storageError}=await supabaseClient.storage.from("allvar-media").remove([mediaPath]);if(storageError)console.warn("Could not remove media:",storageError.message)}await loadPrivateMessages()}
+async function getPrivatePhotoUrl(path){const cached=privatePhotoUrlCache.get(path);if(cached&&cached.expiresAt>Date.now()+60000)return cached.url;const {data,error}=await supabaseClient.storage.from("allvar-media").createSignedUrl(path,3600);if(error)throw error;privatePhotoUrlCache.set(path,{url:data.signedUrl,expiresAt:Date.now()+3500000});return data.signedUrl}
+async function markMediaViewed(messageId){if(!currentUser)return false;const {data,error}=await supabaseClient.rpc("mark_media_viewed",{p_message_id:messageId});if(error){console.warn("Could not record media view:",error.message);return false}return data===true}
+async function showMediaViewers(message){try{const {data,error}=await supabaseClient.from("messages").select("media_viewed_at,media_viewed_by,viewed_at,viewed_by,view_once").eq("id",message.id).maybeSingle();if(error)throw error;const viewerId=data?.media_viewed_by||data?.viewed_by||null,viewedAt=data?.media_viewed_at||data?.viewed_at||null;if(!viewerId||!viewedAt){alert("Viewers\n\nNo one has opened this picture or video yet.");return}const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("username,display_name").eq("id",viewerId).maybeSingle();if(profileError)throw profileError;const name=profile?.display_name||profile?.username||"AlLvar user";alert("Viewers\n\nViewed by: @"+(profile?.username||name)+"\nTime: "+new Date(viewedAt).toLocaleString())}catch(error){alert("Could not load viewers: "+error.message)}}
+let photoViewerCloseCallback=null;function openPhotoViewer(url,onClose=null){if(!url)return;photoViewerCloseCallback=typeof onClose==="function"?onClose:null;$("photoViewerImage").src=url;$("photoViewer").classList.remove("hidden")}function closePhotoViewer(){$("photoViewer").classList.add("hidden");$("photoViewerImage").removeAttribute("src");const callback=photoViewerCloseCallback;photoViewerCloseCallback=null;if(callback){try{callback()}catch(error){console.warn(error)}}}
+$("closePhotoViewer").addEventListener("click",closePhotoViewer);$("photoViewer").addEventListener("click",event=>{if(event.target===$("photoViewer"))closePhotoViewer()});document.addEventListener("keydown",event=>{if(event.key==="Escape")closePhotoViewer()});
+function createMessageElement(message){const line=document.createElement("div");line.className="chatMessage";line._message=message;const top=document.createElement("div");top.className="messageTop";const body=document.createElement("div");body.className="messageBody";const menuWrap=document.createElement("div");menuWrap.className="messageMenuWrap";const menuButton=document.createElement("button");menuButton.className="messageMenuButton";menuButton.type="button";menuButton.textContent="⋮";menuButton.setAttribute("aria-label","Message options");const menu=document.createElement("div");menu.className="messageMenu hidden";menuButton.addEventListener("click",event=>{event.stopPropagation();const wasHidden=menu.classList.contains("hidden");closeMessageMenus();if(wasHidden)menu.classList.remove("hidden")});menuWrap.append(menuButton,menu);top.append(body,menuWrap);line.appendChild(top);line._top=top;line._body=body;line._menu=menu;line._mediaPath=null;line._mediaElement=null;line._meta=null;line._menuSignature="";return line}
+function showViewOncePrompt(line,message,path,photoMessage,videoMessage){line._body.replaceChildren();line._mediaElement=null;line._mediaPath=path;const promptBox=document.createElement("div");promptBox.className="viewOncePrompt";const text=document.createElement("div");text.textContent=photoMessage?"👁 Picture — View Once":"👁 Video — View Once";const button=document.createElement("button");button.type="button";button.textContent="Tap to view once";button.addEventListener("click",async()=>{button.disabled=true;button.textContent="Opening...";try{const {data,error}=await supabaseClient.rpc("open_view_once_message",{p_message_id:message.id});if(error)throw error;if(data!==true){promptBox.textContent="👁 Already opened or no longer available.";await loadPrivateMessages();return}viewOnceOpenMessages.add(String(message.id));const url=await getPrivatePhotoUrl(path);if(line._message?.id!==message.id)return;line._body.replaceChildren();let media;if(photoMessage){media=document.createElement("img");media.className="chatPhoto";media.alt="View Once picture";media.src=url;media.dataset.loaded="true";media.addEventListener("click",()=>openPhotoViewer(url,()=>{viewOnceOpenMessages.delete(String(message.id));line._body.replaceChildren();const done=document.createElement("div");done.className="viewOncePrompt";done.textContent="👁 Already opened";line._body.appendChild(done);line._mediaElement=null;loadPrivateMessages()}))}else{media=document.createElement("video");media.className="chatVideo";media.controls=true;media.playsInline=true;media.preload="metadata";media.src=url;media.addEventListener("ended",()=>{media.pause();media.removeAttribute("src");media.load();viewOnceOpenMessages.delete(String(message.id));line._body.replaceChildren();const done=document.createElement("div");done.className="viewOncePrompt";done.textContent="👁 Already opened";line._body.appendChild(done);line._mediaElement=null;loadPrivateMessages()},{once:true})}line._mediaElement=media;line._body.appendChild(media);await markMediaViewed(message.id)}catch(error){button.disabled=false;button.textContent="Tap to view once";alert("Could not open this media: "+error.message)}});promptBox.append(text,button);line._body.appendChild(promptBox)}
+function updateMessageElement(line,message){line._message=message;const isMine=message.sender_id===currentUser.id,photoMessage=isPhotoMessage(message),videoMessage=isVideoMessage(message),audioMessage=isAudioMessage(message),mediaMessage=photoMessage||videoMessage,deletedMessage=message.content===DELETED_MESSAGE_TEXT;line.className="chatMessage "+(isMine?"myMessage":"friendMessage")+(photoMessage?" photoMessage":"")+(videoMessage?" videoMessage":"")+(audioMessage?" audioMessage":"");
+if(mediaMessage){const path=mediaPathFromMessage(message),viewOnce=message.view_once===true,alreadyViewed=Boolean(message.viewed_at),activeView=viewOnceOpenMessages.has(String(message.id));if(viewOnce&&!isMine&&alreadyViewed&&!activeView){if(line._mediaPath!==path||!line._body.querySelector(".viewOncePrompt")||line._body.querySelector(".viewOncePrompt")?.textContent!=="👁 Already opened"){line._body.replaceChildren();const done=document.createElement("div");done.className="viewOncePrompt";done.textContent="👁 Already opened";line._body.appendChild(done)}line._mediaPath=path;line._mediaElement=null}else if(viewOnce&&!isMine&&!alreadyViewed&&!activeView){if(line._mediaPath!==path||!line._body.querySelector(".viewOncePrompt")||line._body.querySelector("button")?.textContent!=="Tap to view once")showViewOncePrompt(line,message,path,photoMessage,videoMessage)}else if(!(viewOnce&&!isMine&&activeView)){if(line._mediaPath!==path||!line._mediaElement){line._body.replaceChildren();line._mediaPath=path;let media;if(photoMessage){media=document.createElement("img");media.className="chatPhoto";media.alt="Picture shared in AlLvar chat";media.loading="lazy";media.addEventListener("click",async()=>{if(media.dataset.loaded==="true"&&media.src){if(!isMine)await markMediaViewed(message.id);openPhotoViewer(media.src)}})}else{media=document.createElement("video");media.className="chatVideo";media.controls=true;media.playsInline=true;media.preload="metadata";media.setAttribute("aria-label","Video shared in AlLvar chat");media.addEventListener("play",()=>{if(!isMine)markMediaViewed(message.id)})}line._mediaElement=media;line._body.appendChild(media);getPrivatePhotoUrl(path).then(url=>{if(line._mediaElement===media&&line._mediaPath===path){if(media.src!==url)media.src=url;media.dataset.loaded="true"}}).catch(error=>{if(line._mediaElement===media&&line._mediaPath===path){media.classList.add("hidden");if(!line._body.querySelector(".mediaError")){const errorText=document.createElement("div");errorText.className="mediaError";errorText.textContent=photoMessage?"Picture could not be loaded.":"Video could not be loaded.";line._body.appendChild(errorText)}}console.warn("Media load error:",error.message)})}}}
+else if(audioMessage&& !deletedMessage){const path=mediaPathFromMessage(message);if(line._mediaPath!==path||!line._mediaElement){line._body.replaceChildren();line._mediaPath=path;const audio=document.createElement("audio");audio.className="chatAudio";audio.controls=true;audio.preload="metadata";audio.setAttribute("aria-label","Voice message");line._mediaElement=audio;line._body.appendChild(audio);getPrivatePhotoUrl(path).then(url=>{if(line._mediaElement===audio&&line._mediaPath===path)audio.src=url}).catch(error=>{if(line._mediaElement===audio){audio.classList.add("hidden");const errorText=document.createElement("div");errorText.className="mediaError";errorText.textContent="Voice message could not be loaded.";line._body.appendChild(errorText)}console.warn("Audio load error:",error.message)})}}
+else{if(line._mediaElement&&line._mediaElement.tagName==="VIDEO"){line._mediaElement.pause();line._mediaElement.removeAttribute("src");line._mediaElement.load()}line._mediaElement=null;line._mediaPath=null;const text=message.content||"";if(line._body.textContent!==text)line._body.textContent=text}
+const menuSignature=[isMine,photoMessage,videoMessage,audioMessage,deletedMessage].join("|");if(line._menuSignature!==menuSignature){line._menu.replaceChildren();line._menuSignature=menuSignature;if(isMine&&!deletedMessage&&!mediaMessage&&!audioMessage){const edit=document.createElement("button");edit.textContent="Edit";edit.addEventListener("click",async()=>{const latest=line._message;closeMessageMenus();await editMessage(latest)});line._menu.appendChild(edit)}if(mediaMessage&&!deletedMessage){const viewers=document.createElement("button");viewers.textContent="Viewers";viewers.addEventListener("click",async()=>{const latest=line._message;closeMessageMenus();await showMediaViewers(latest)});line._menu.appendChild(viewers)}const deleteMe=document.createElement("button");deleteMe.textContent="Delete for me";deleteMe.addEventListener("click",async()=>{const latest=line._message;hideMessageForMe(latest.id);closeMessageMenus();await loadPrivateMessages()});line._menu.appendChild(deleteMe);if(isMine&&!deletedMessage){const deleteEveryone=document.createElement("button");deleteEveryone.className="danger";deleteEveryone.textContent="Delete for everyone";deleteEveryone.addEventListener("click",async()=>{const latest=line._message;closeMessageMenus();await deleteMessageForEveryone(latest)});line._menu.appendChild(deleteEveryone)}}
+if(isMine){if(!line._meta){line._meta=document.createElement("div");line._meta.className="messageMeta";line.appendChild(line._meta)}let tickText="✓ Sent";if(message.read_at)tickText="✓✓ Read";else if(message.delivered_at)tickText="✓✓ Delivered";if(line._meta.textContent!==tickText)line._meta.textContent=tickText}else if(line._meta){line._meta.remove();line._meta=null}}
+async function loadPrivateMessages(){if(!activeChatId||!currentUser||loadingMessages)return;loadingMessages=true;const chatAtStart=String(activeChatId),userAtStart=currentUser.id;try{const {data,error}=await supabaseClient.from("messages").select("*").eq("chat_id",chatAtStart).order("created_at",{ascending:true});if(error){if(String(activeChatId)===chatAtStart)setChatStatus("Could not load messages: "+error.message);return}if(!currentUser||currentUser.id!==userAtStart||String(activeChatId)!==chatAtStart)return;if(renderedChatId!==chatAtStart)resetRenderedMessages(chatAtStart);const uniqueMessages=new Map();for(const message of(data||[])){if(message&&message.id&&!uniqueMessages.has(String(message.id)))uniqueMessages.set(String(message.id),message)}const hiddenIds=getHiddenMessageIds(),messages=Array.from(uniqueMessages.values()).filter(message=>!hiddenIds.has(String(message.id))),box=$("chatMessages"),nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<70;setChatStatus(messages.length?"":"No messages yet. Say hello!");const visibleIds=new Set(messages.map(message=>String(message.id)));for(const [id,line] of renderedMessageElements){if(!visibleIds.has(id)){line.remove();if(line._mediaElement&&(line._mediaElement.tagName==="VIDEO"||line._mediaElement.tagName==="AUDIO")){line._mediaElement.pause();line._mediaElement.removeAttribute("src");line._mediaElement.load()}renderedMessageElements.delete(id);viewOnceOpenMessages.delete(id)}}for(let index=0;index<messages.length;index++){const message=messages[index],id=String(message.id);let line=renderedMessageElements.get(id);if(!line){line=createMessageElement(message);renderedMessageElements.set(id,line)}updateMessageElement(line,message);const currentAtPosition=box.children[index]||null;if(currentAtPosition!==line)box.insertBefore(line,currentAtPosition)}if(nearBottom)box.scrollTop=box.scrollHeight;for(const message of messages){if(message.receiver_id===currentUser.id&&!message.read_at)await markMessageStatus(message.id,"read")}}catch(error){if(String(activeChatId)===chatAtStart)setChatStatus("Message error: "+error.message)}finally{loadingMessages=false}}
+document.addEventListener("click",event=>{if(!event.target.closest(".messageMenuWrap"))closeMessageMenus()});
+async function sendPrivateMessage(){if(!currentUser||!activeChatId||!activeFriendId){alert("Open a private chat first.");return}if(sendingMessage)return;const content=$("chatMessageInput").value.trim();if(!content)return;sendingMessage=true;$("sendChatMessage").disabled=true;setChatStatus("Sending message...");try{const {error}=await supabaseClient.from("messages").insert({chat_id:String(activeChatId),sender_id:currentUser.id,receiver_id:activeFriendId,content});if(error)throw error;$("chatMessageInput").value="";updateComposerButton();await loadPrivateMessages()}catch(error){setChatStatus("Message error: "+error.message)}finally{sendingMessage=false;$("sendChatMessage").disabled=false;updateComposerButton()}}
+async function sendPrivateMedia(file){if(!currentUser||!activeChatId||!activeFriendId){alert("Open a private chat first.");return}if(!file)return;const isImage=Boolean(file.type&&file.type.startsWith("image/")),isVideo=Boolean(file.type&&file.type.startsWith("video/"));if(!isImage&&!isVideo){alert("Please choose a picture or a video.");return}if(isImage&&file.size>8*1024*1024){alert("Please choose a picture smaller than 8 MB.");return}if(isVideo&&file.size>50*1024*1024){alert("Please choose a video smaller than 50 MB.");return}if(!crypto.randomUUID){alert("This browser does not support secure media filenames. Please try a newer browser.");return}if(sendingMedia)return;sendingMedia=true;const chatIdAtStart=String(activeChatId),friendIdAtStart=activeFriendId,sendAsViewOnce=viewOnceEnabled;const extension=(file.name.split(".").pop()||(isVideo?"mp4":"jpg")).toLowerCase().replace(/[^a-z0-9]/g,"")||(isVideo?"mp4":"jpg"),path=`${chatIdAtStart}/${currentUser.id}/${Date.now()}_${crypto.randomUUID()}.${extension}`,prefix=isVideo?VIDEO_PREFIX:PHOTO_PREFIX;$("photoButton").disabled=true;$("viewOnceButton").disabled=true;$("sendChatMessage").disabled=true;setChatStatus(isVideo?"Uploading video...":"Uploading picture...");try{const {error:uploadError}=await supabaseClient.storage.from("allvar-media").upload(path,file,{contentType:file.type,upsert:false});if(uploadError)throw uploadError;const {error:messageError}=await supabaseClient.from("messages").insert({chat_id:chatIdAtStart,sender_id:currentUser.id,receiver_id:friendIdAtStart,content:prefix+path,view_once:sendAsViewOnce});if(messageError){const {error:cleanupError}=await supabaseClient.storage.from("allvar-media").remove([path]);if(cleanupError)console.warn("Could not remove unused uploaded media:",cleanupError.message);throw messageError}if(sendAsViewOnce){viewOnceEnabled=false;updateViewOnceButton()}setChatStatus((isVideo?"Video":"Picture")+" sent"+(sendAsViewOnce?" as View Once.":"."));if(String(activeChatId)===chatIdAtStart)await loadPrivateMessages()}catch(error){setChatStatus((isVideo?"Video error: ":"Picture error: ")+error.message);alert("Could not send "+(isVideo?"video: ":"picture: ")+error.message)}finally{sendingMedia=false;$("photoButton").disabled=false;$("viewOnceButton").disabled=false;$("sendChatMessage").disabled=false;$("photoPicker").value=""}}
+
+/* VOICE RECORDING: pause/resume, stop-preview, cancel, and upload to the same private media bucket. */
+function formatVoiceTime(seconds){const n=Math.max(0,Math.floor(seconds));return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
+function voiceElapsed(){return voiceElapsedBeforePause+(voiceRecording&&!voicePaused?Math.max(0,(Date.now()-voiceStartedAt)/1000):0)}
+function updateVoiceTimer(){const elapsed=voiceElapsed();$("voiceTimer").innerHTML=(voiceRecording&&!voicePaused?'<span class="recordDot"></span>':'')+'<span>'+(voiceRecording?(voicePaused?'Paused: ':'Recording: '):'Voice message: ')+formatVoiceTime(elapsed)+'</span>'}
+function clearVoiceTimer(){if(voiceTimerInterval){clearInterval(voiceTimerInterval);voiceTimerInterval=null}}
+function clearVoiceDraft(){clearVoiceTimer();if(recordedVoiceUrl){URL.revokeObjectURL(recordedVoiceUrl);recordedVoiceUrl=null}recordedVoiceBlob=null;recordedChunks=[];voiceElapsedBeforePause=0;voicePaused=false;voiceRecording=false;voiceBusy=false;mediaRecorder=null;$("voiceControls").classList.add("hidden");$("voicePreviewArea").replaceChildren();$("pauseVoiceButton").classList.remove("hidden");$("resumeVoiceButton").classList.add("hidden");updateComposerButton()}
+async function startVoiceRecording(){if(!currentUser||!activeChatId||!activeFriendId){alert("Open a private chat first.");return}if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){alert("Voice recording is not supported in this browser. Please open AlLvar in an updated browser and allow microphone access.");return}if(voiceBusy||voiceRecording)return;try{voiceBusy=true;const stream=await navigator.mediaDevices.getUserMedia({audio:true});let options={};if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))options.mimeType="audio/webm;codecs=opus";else if(MediaRecorder.isTypeSupported("audio/webm"))options.mimeType="audio/webm";mediaRecorder=new MediaRecorder(stream,options);recordedChunks=[];recordedVoiceBlob=null;voiceElapsedBeforePause=0;voicePaused=false;voiceStartedAt=Date.now();voiceRecording=true;mediaRecorder.ondataavailable=event=>{if(event.data&&event.data.size)recordedChunks.push(event.data)};mediaRecorder.onerror=event=>{console.warn("Voice recorder error",event.error);alert("The voice recording had a problem. Please try again.");cancelVoiceRecording()};mediaRecorder.onstop=()=>{stream.getTracks().forEach(track=>track.stop());if(!recordedVoiceBlob&&recordedChunks.length){const type=mediaRecorder?.mimeType||recordedChunks[0].type||"audio/webm";recordedVoiceBlob=new Blob(recordedChunks,{type})}voiceRecording=false;voicePaused=false;clearVoiceTimer();voiceBusy=false;showVoicePreview()};mediaRecorder.start(250);$("voiceControls").classList.remove("hidden");$("voicePreviewArea").replaceChildren();$("pauseVoiceButton").classList.remove("hidden");$("resumeVoiceButton").classList.add("hidden");updateVoiceTimer();voiceTimerInterval=setInterval(updateVoiceTimer,250);setChatStatus("Recording voice message. Tap the square button to stop and preview.");updateComposerButton()}catch(error){voiceBusy=false;voiceRecording=false;setChatStatus("Microphone error: "+error.message);alert("Could not start recording. Please allow microphone access and try again.");updateComposerButton()}}
+function pauseVoiceRecording(){if(!mediaRecorder||mediaRecorder.state!=="recording")return;try{mediaRecorder.pause();voiceElapsedBeforePause+=(Date.now()-voiceStartedAt)/1000;voicePaused=true;clearVoiceTimer();$("pauseVoiceButton").classList.add("hidden");$("resumeVoiceButton").classList.remove("hidden");updateVoiceTimer();setChatStatus("Recording paused. Tap Resume to continue.")}catch(error){alert("Could not pause recording: "+error.message)}}
+function resumeVoiceRecording(){if(!mediaRecorder||mediaRecorder.state!=="paused")return;try{mediaRecorder.resume();voiceStartedAt=Date.now();voicePaused=false;$("pauseVoiceButton").classList.remove("hidden");$("resumeVoiceButton").classList.add("hidden");updateVoiceTimer();voiceTimerInterval=setInterval(updateVoiceTimer,250);setChatStatus("Recording resumed.")}catch(error){alert("Could not resume recording: "+error.message)}}
+function stopVoiceRecording(){if(!mediaRecorder||!voiceRecording)return;try{if(!voicePaused)voiceElapsedBeforePause+=(Date.now()-voiceStartedAt)/1000;voiceRecording=false;clearVoiceTimer();if(mediaRecorder.state!=="inactive")mediaRecorder.stop();updateComposerButton()}catch(error){alert("Could not stop recording: "+error.message)}}
+function showVoicePreview(){if(!recordedVoiceBlob||!recordedVoiceBlob.size){setChatStatus("No audio was recorded. Please try again.");clearVoiceDraft();return}if(recordedVoiceUrl)URL.revokeObjectURL(recordedVoiceUrl);recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);$("voiceControls").classList.remove("hidden");$("voiceTimer").innerHTML='<span>Preview: '+formatVoiceTime(voiceElapsedBeforePause)+'</span>';$("voicePreviewArea").replaceChildren();const audio=document.createElement("audio");audio.className="voicePreview";audio.controls=true;audio.src=recordedVoiceUrl;audio.preload="metadata";const send=document.createElement("button");send.className="voiceSendButton";send.type="button";send.textContent="Send voice message";send.addEventListener("click",sendRecordedVoice);const cancel=document.createElement("button");cancel.className="secondary";cancel.type="button";cancel.textContent="Discard recording";cancel.addEventListener("click",cancelVoiceRecording);$("voicePreviewArea").append(audio,send,cancel);$("pauseVoiceButton").classList.add("hidden");$("resumeVoiceButton").classList.add("hidden");setChatStatus("Listen to your recording, then send it or discard it.");updateComposerButton()}
+function cancelVoiceRecording(){try{clearVoiceTimer();if(mediaRecorder&&mediaRecorder.state!=="inactive"){const stream=mediaRecorder.stream;mediaRecorder.onstop=null;mediaRecorder.stop();stream?.getTracks().forEach(track=>track.stop())}}catch(error){console.warn(error)}clearVoiceDraft();setChatStatus("Voice recording cancelled.")}
+async function sendRecordedVoice(){if(!currentUser||!activeChatId||!activeFriendId){alert("Open a private chat first.");return}if(!recordedVoiceBlob||sendingMedia)return;if(recordedVoiceBlob.size>15*1024*1024){alert("This voice message is too large. Please record a shorter message.");return}if(!crypto.randomUUID){alert("This browser does not support secure media filenames. Please try a newer browser.");return}const chatIdAtStart=String(activeChatId),friendIdAtStart=activeFriendId,blob=recordedVoiceBlob;let extension="webm";if(blob.type.includes("ogg"))extension="ogg";else if(blob.type.includes("mp4")||blob.type.includes("m4a"))extension="m4a";const path=`${chatIdAtStart}/${currentUser.id}/${Date.now()}_${crypto.randomUUID()}.${extension}`;sendingMedia=true;voiceBusy=true;const sendButton=$("voicePreviewArea").querySelector("button");if(sendButton)sendButton.disabled=true;$("photoButton").disabled=true;$("viewOnceButton").disabled=true;$("sendChatMessage").disabled=true;setChatStatus("Uploading voice message...");try{const {error:uploadError}=await supabaseClient.storage.from("allvar-media").upload(path,blob,{contentType:blob.type||"audio/webm",upsert:false});if(uploadError)throw uploadError;const {error:messageError}=await supabaseClient.from("messages").insert({chat_id:chatIdAtStart,sender_id:currentUser.id,receiver_id:friendIdAtStart,content:AUDIO_PREFIX+path});if(messageError){const {error:cleanupError}=await supabaseClient.storage.from("allvar-media").remove([path]);if(cleanupError)console.warn("Could not remove unused voice file:",cleanupError.message);throw messageError}clearVoiceDraft();setChatStatus("Voice message sent.");if(String(activeChatId)===chatIdAtStart)await loadPrivateMessages()}catch(error){setChatStatus("Voice message error: "+error.message);alert("Could not send voice message: "+error.message);if(sendButton)sendButton.disabled=false;voiceBusy=false}finally{sendingMedia=false;$("photoButton").disabled=false;$("viewOnceButton").disabled=false;$("sendChatMessage").disabled=false;updateComposerButton()}}
+
+async function loadConversations(){if(!currentUser||loadingConversations)return;loadingConversations=true;const userIdAtStart=currentUser.id,list=$("conversationList");try{const {data,error}=await supabaseClient.from("conversation").select("*").or(`user_one.eq.${userIdAtStart},user_two.eq.${userIdAtStart}`).order("last_message_at",{ascending:false});if(error)throw error;if(!currentUser||currentUser.id!==userIdAtStart)return;const fragment=document.createDocumentFragment(),heading=document.createElement("h3");heading.textContent="My private chats";fragment.appendChild(heading);const seen=new Set(),friends=[];for(const chat of(data||[])){const friendId=chat.user_one===userIdAtStart?chat.user_two:chat.user_one;if(!friendId||friendId===userIdAtStart||seen.has(friendId))continue;seen.add(friendId);friends.push({friendId,chat})}if(!friends.length){const p=document.createElement("div");p.className="smallText";p.textContent="No conversations yet. Find a friend to start chatting.";fragment.appendChild(p)}else{const profileResults=await Promise.all(friends.map(async item=>{const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name").eq("id",item.friendId).maybeSingle();if(profileError||!profile)return null;return {...item,profile}}));if(!currentUser||currentUser.id!==userIdAtStart)return;for(const item of profileResults){if(!item)continue;const profile=item.profile,row=document.createElement("div");row.className="userRow";const title=document.createElement("div");title.className="userName";title.textContent=profile.display_name||profile.username||"AlLvar user";const handle=document.createElement("div");handle.className="smallText";handle.textContent="@"+(profile.username||"user");const open=document.createElement("button");open.className="primary";open.textContent="Open chat";open.addEventListener("click",()=>openPrivateChat(profile.id,profile.username));row.append(title,handle,open);fragment.appendChild(row)}}if(currentUser&&currentUser.id===userIdAtStart)list.replaceChildren(fragment)}catch(error){if(!list.children.length){const p=document.createElement("div");p.className="smallText";p.textContent="Could not load chats: "+error.message;list.appendChild(p)}}finally{loadingConversations=false}}
+$("searchFriendsBtn").addEventListener("click",async()=>{const username=$("friendSearch").value.trim();$("friendsResults").replaceChildren();if(!username){$("searchStatus").textContent="Enter a username to search.";return}if(!currentUser){$("searchStatus").textContent="Please log in before searching.";return}$("searchStatus").textContent="Searching...";try{const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name").ilike("username",username).limit(10);if(error)throw error;const people=(data||[]).filter(person=>person.id!==currentUser.id);if(!people.length){$("searchStatus").textContent="No other user found with that username.";return}$("searchStatus").textContent="Search results: "+people.length;for(const person of people){const row=document.createElement("div");row.className="userRow";const name=document.createElement("div");name.className="userName";name.textContent=person.display_name||person.username;const handle=document.createElement("div");handle.className="smallText";handle.textContent="@"+person.username;const button=document.createElement("button");button.className="primary";button.textContent="Message";button.addEventListener("click",()=>openPrivateChat(person.id,person.username));row.append(name,handle,button);$("friendsResults").appendChild(row)}}catch(error){$("searchStatus").textContent="Search error: "+error.message}});
+$("signupBtn").addEventListener("click",async()=>{const username=$("username").value.trim(),email=$("email").value.trim(),password=$("password").value;if(!/^[A-Za-z0-9_]{3,20}$/.test(username)){status("Username must have 3–20 letters, numbers, or underscores.");return}if(!email||password.length<6){status("Enter your email and a password of at least 6 characters.");return}status("Creating your account...");try{const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username}}});if(error)throw error;if(data.session&&data.user){await saveProfile(data.user,username);currentUser=data.user;showFriends()}else status("Account created. Confirm your email, then return here and log in.")}catch(error){status("Sign-up error: "+error.message)}});
+$("loginBtn").addEventListener("click",async()=>{const email=$("email").value.trim(),password=$("password").value;if(!email||!password){status("Enter your email and password.");return}status("Logging in...");try{const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;currentUser=data.user;const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("id,username").eq("id",currentUser.id).maybeSingle();if(profileError)throw profileError;if(!profile){const savedUsername=currentUser.user_metadata?.username;if(!savedUsername)throw new Error("No profile was found and your account has no saved username.");await saveProfile(currentUser,savedUsername)}showFriends()}catch(error){status("Login error: "+error.message)}});
+$("backToFriends").addEventListener("click",()=>{if(messageTimer){clearInterval(messageTimer);messageTimer=null}activeChatId=null;activeFriendId=null;activeFriendUsername="";resetRenderedMessages(null);cancelVoiceRecording();$("chatScreen").classList.add("hidden");$("friendsSection").classList.remove("hidden");loadConversations()});
+$("openChatsBtn").addEventListener("click",()=>{$("friendsResults").replaceChildren();$("searchStatus").textContent="Your private chats are listed below.";loadConversations()});
+$("logoutBtn").addEventListener("click",async()=>{$("searchStatus").textContent="Logging out...";cancelVoiceRecording();const {error}=await supabaseClient.auth.signOut();if(error){$("searchStatus").textContent="Logout error: "+error.message;return}currentUser=null;activeChatId=null;activeFriendId=null;activeFriendUsername="";viewOnceEnabled=false;updateViewOnceButton();resetRenderedMessages(null);closePhotoViewer();$("friendSearch").value="";$("friendsResults").replaceChildren();$("conversationList").replaceChildren();showLogin();status("You have logged out.")});
+supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){$("authCard").classList.add("hidden");$("friendsSection").classList.remove("hidden");loadConversations();startConversationRefresh()}else{stopTimers();if(voiceRecording||recordedVoiceBlob)cancelVoiceRecording();activeChatId=null;activeFriendId=null;activeFriendUsername="";viewOnceEnabled=false;updateViewOnceButton();resetRenderedMessages(null);closePhotoViewer();$("authCard").classList.remove("hidden");$("friendsSection").classList.add("hidden");$("chatScreen").classList.add("hidden")}});
+$("chatMessageInput").addEventListener("input",updateComposerButton);$("chatMessageInput").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();if($("chatMessageInput").value.trim())sendPrivateMessage()}});
+$("sendChatMessage").addEventListener("click",()=>{if($("chatMessageInput").value.trim()){sendPrivateMessage();return}if(voiceRecording){stopVoiceRecording();return}if(!recordedVoiceBlob)startVoiceRecording()});
+$("pauseVoiceButton").addEventListener("click",pauseVoiceRecording);$("resumeVoiceButton").addEventListener("click",resumeVoiceRecording);$("cancelVoiceButton").addEventListener("click",cancelVoiceRecording);
+$("photoButton").addEventListener("click",()=>$("photoPicker").click());$("viewOnceButton").addEventListener("click",()=>{viewOnceEnabled=!viewOnceEnabled;updateViewOnceButton();setChatStatus(viewOnceEnabled?"View Once is ON for your next picture or video.":"View Once is OFF.")});$("photoPicker").addEventListener("change",async event=>{const file=event.target.files&&event.target.files[0];if(file)await sendPrivateMedia(file)});
+updateViewOnceButton();updateComposerButton();
+</script></body></html>
